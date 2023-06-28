@@ -1,0 +1,19 @@
+name: decision-transformer-microrts
+channels:
+- pytorch
+dependencies:
+- python=3.8.5
+- anaconda
+- cudatoolkit=10.
+- numpy
+- pip
+- pip:
+  - gymnasium==0.28.1
+  - numpy==1.21.0
+  - torch==1.8.1
+  - transformers==4.5.1
+  - wandb==0.9.1
+  - JPype1==1.3.0
+  - peewee==3.14.8
+  - spyder==5.1.5
+  - lark==1.1.5

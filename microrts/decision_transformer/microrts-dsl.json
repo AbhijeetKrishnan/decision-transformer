@@ -1,0 +1,19 @@
+[
+    ["Program", ["{Block} {Program}", "{Block}"]],
+    ["Block", ["{ClauseBlock}", "{ConditionalBlock}", "{LoopBlock}"]], 
+    ["ConditionalBlock", [
+        "if ( {BoolExpr} ) then ( {ClauseBlock} ) else ( {ClauseBlock} )",
+        "if ( {BoolExpr} ) then ( {ClauseBlock} )"
+    ]], 
+    ["LoopBlock", "for (each unit u) ( {LoopBody} )"],
+    ["LoopBody", [
+        "{ClauseBlock} {LoopBody}", 
+        "{ConditionalBlock} {LoopBody}",
+        "{ClauseBlock}",
+        "{ConditionalBlock}"
+    ]],
+    ["BoolExpr", ["not {Bool}", "{Bool}"]],
+    ["Bool", ["b1", "b2", "b3"]], 
+    ["ClauseBlock", ["{Clause} {ClauseBlock}", "{Clause}"]],
+    ["Clause", ["c1", "c2", "c3"]]
+]

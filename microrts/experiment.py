@@ -1,4 +1,5 @@
 import gym
+import gymnasium
 import numpy as np
 import torch
 import wandb
@@ -35,27 +36,10 @@ def experiment(
     group_name = f'{exp_prefix}-{env_name}-{dataset}'
     exp_prefix = f'{group_name}-{random.randint(int(1e5), int(1e6) - 1)}'
 
-    if env_name == 'hopper':
-        env = gym.make('Hopper-v3')
-        max_ep_len = 1000
-        env_targets = [3600, 1800]  # evaluation conditioning targets
-        scale = 1000.  # normalization for rewards/returns
-    elif env_name == 'halfcheetah':
-        env = gym.make('HalfCheetah-v3')
-        max_ep_len = 1000
-        env_targets = [12000, 6000]
-        scale = 1000.
-    elif env_name == 'walker2d':
-        env = gym.make('Walker2d-v3')
-        max_ep_len = 1000
-        env_targets = [5000, 2500]
-        scale = 1000.
-    # elif env_name == 'reacher2d':
-    #     from decision_transformer.envs.reacher_2d import Reacher2dEnv
-    #     env = Reacher2dEnv()
-    #     max_ep_len = 100
-    #     env_targets = [76, 40]
-    #     scale = 10.
+    if env_name == 'microrts':
+        max_len = 200
+        with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file:
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file, max_len=max_len)
     else:
         raise NotImplementedError
 
@@ -282,7 +266,7 @@ def experiment(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, default='hopper')
+    parser.add_argument('--env', type=str, default='microrts')
     parser.add_argument('--dataset', type=str, default='medium')  # medium, medium-replay, medium-expert, expert
     parser.add_argument('--mode', type=str, default='normal')  # normal for standard setting, delayed for sparse
     parser.add_argument('--K', type=int, default=20)

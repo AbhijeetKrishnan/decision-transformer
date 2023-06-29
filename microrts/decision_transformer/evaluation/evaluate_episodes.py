@@ -21,7 +21,7 @@ def evaluate_episode(
     state_mean = torch.from_numpy(state_mean).to(device=device)
     state_std = torch.from_numpy(state_std).to(device=device)
 
-    state = env.reset()
+    state, info = env.reset()
 
     # we keep all the histories on the device
     # note that the latest action and reward will be "padding"
@@ -46,7 +46,8 @@ def evaluate_episode(
         )
         actions[-1] = action
         action = action.detach().cpu().numpy()
-
+        print(action)
+        
         state, reward, done, _ = env.step(action)
 
         cur_state = torch.from_numpy(state).to(device=device).reshape(1, state_dim)
@@ -82,7 +83,7 @@ def evaluate_episode_rtg(
     state_mean = torch.from_numpy(state_mean).to(device=device)
     state_std = torch.from_numpy(state_std).to(device=device)
 
-    state = env.reset()
+    state, info = env.reset()
     if mode == 'noise':
         state = state + np.random.normal(0, 0.1, size=state.shape)
 

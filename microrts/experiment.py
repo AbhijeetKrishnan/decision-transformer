@@ -1,4 +1,3 @@
-import gym
 import gymnasium
 import numpy as np
 import torch
@@ -14,6 +13,7 @@ from decision_transformer.models.decision_transformer import DecisionTransformer
 from decision_transformer.models.mlp_bc import MLPBCModel
 from decision_transformer.training.act_trainer import ActTrainer
 from decision_transformer.training.seq_trainer import SequenceTrainer
+from decision_transformer.envs.synthesis_env import GrammarSynthesisEnv
 
 
 def discount_cumsum(x, gamma):
@@ -37,20 +37,23 @@ def experiment(
     exp_prefix = f'{group_name}-{random.randint(int(1e5), int(1e6) - 1)}'
 
     if env_name == 'microrts':
-        max_len = 200
         with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file:
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file, max_len=max_len)
+            env = GrammarSynthesisEnv(grammar=dsl_file, start='program')
+        max_ep_len = env.max_len
+        env_targets = [2, 1] # TODO: find out what these evaluation conditioning targets should be
+        scale = 1000. # TODO: find out what this should be
     else:
         raise NotImplementedError
 
     if model_type == 'bc':
         env_targets = env_targets[:1]  # since BC ignores target, no need for different evaluations
 
+    # TODO: fix this - Discrete space has empty .shape tuple
     state_dim = env.observation_space.shape[0]
-    act_dim = env.action_space.shape[0]
+    act_dim = 1 # env.action_space.shape[0]
 
     # load dataset
-    dataset_path = f'data/{env_name}-{dataset}-v2.pkl'
+    dataset_path = f'data/{env_name}-{dataset}.pkl'
     with open(dataset_path, 'rb') as f:
         trajectories = pickle.load(f)
 
@@ -267,9 +270,9 @@ def experiment(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', type=str, default='microrts')
-    parser.add_argument('--dataset', type=str, default='medium')  # medium, medium-replay, medium-expert, expert
+    parser.add_argument('--dataset', type=str, default='random')  # random
     parser.add_argument('--mode', type=str, default='normal')  # normal for standard setting, delayed for sparse
-    parser.add_argument('--K', type=int, default=20)
+    parser.add_argument('--K', type=int, default=20) # context length
     parser.add_argument('--pct_traj', type=float, default=1.)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--model_type', type=str, default='dt')  # dt for decision transformer, bc for behavior cloning

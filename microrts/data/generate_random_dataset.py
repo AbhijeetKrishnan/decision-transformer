@@ -4,16 +4,11 @@ import numpy as np
 import collections
 import pickle
 
-# import d4rl
-
-import sys
-sys.path.insert(1, '/home/akrish13/phd/decision-transformer/microrts/decision_transformer/envs')
-
-from synthesis_env import GrammarSynthesisEnv
+import grammar_synthesis
 
 def generate_random_dataset(num_episodes: int=10):
     with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file: 
-        env = GrammarSynthesisEnv(grammar=dsl_file.read(), start='program')
+        env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda symbols: len(symbols), parser='lalr')
     dataset = {
         "observations": [],
         "actions": [],

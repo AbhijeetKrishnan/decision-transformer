@@ -1,20 +1,21 @@
 name: decision-transformer-microrts
 channels:
 - pytorch
-- nvidia
+- conda-forge
 dependencies:
-- python>=3.11
+- python>=3.11.3
 - anaconda
 - cudatoolkit=11.8
-- numpy
 - pip
-- pip:
-  - gymnasium
-  - numpy
-  - torch
-  - transformers
-  - wandb
-  - JPype1
-  - peewee
-  - spyder
-  - lark
+# - pip:
+#   - --extra-index-url https://download.pytorch.org/whl/cu118
+#   - numpy>=1.25.0
+#   - gymnasium>=0.28.1
+#   - torch>=2.0.1
+#   - transformers>=4.30.2
+#   - wandb>=0.15.4
+#   - lark>=1.1.5
+#   # - JPype1>=1.4.1
+#   # - peewee>=3.16.2
+#   # - spyder>=5.4.3
+#   - -e git+https://github.com/AbhijeetKrishnan/grammar-synthesis.git#egg=grammar_synthesis

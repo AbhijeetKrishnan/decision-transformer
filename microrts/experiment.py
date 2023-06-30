@@ -1,19 +1,20 @@
-import gymnasium
-import numpy as np
-import torch
-import wandb
-
 import argparse
 import pickle
 import random
 import sys
 
-from decision_transformer.evaluation.evaluate_episodes import evaluate_episode, evaluate_episode_rtg
-from decision_transformer.models.decision_transformer import DecisionTransformer
+import grammar_synthesis
+import gymnasium
+import numpy as np
+import torch
+import wandb
+from decision_transformer.evaluation.evaluate_episodes import (
+    evaluate_episode, evaluate_episode_rtg)
+from decision_transformer.models.decision_transformer import \
+    DecisionTransformer
 from decision_transformer.models.mlp_bc import MLPBCModel
 from decision_transformer.training.act_trainer import ActTrainer
 from decision_transformer.training.seq_trainer import SequenceTrainer
-from decision_transformer.envs.synthesis_env import GrammarSynthesisEnv
 
 
 def discount_cumsum(x, gamma):
@@ -38,7 +39,7 @@ def experiment(
 
     if env_name == 'microrts':
         with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file:
-            env = GrammarSynthesisEnv(grammar=dsl_file, start='program')
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda symbols: len(symbols), parser='lalr')
         max_ep_len = env.max_len
         env_targets = [2, 1] # TODO: find out what these evaluation conditioning targets should be
         scale = 1000. # TODO: find out what this should be

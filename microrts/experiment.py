@@ -51,7 +51,7 @@ def experiment(
 
     # TODO: fix this - Discrete space has empty .shape tuple
     state_dim = env.observation_space.shape[0]
-    act_dim = 1 # env.action_space.shape[0]
+    act_dim = env.action_space.n # for discrete environments
 
     # load dataset
     dataset_path = f'data/{env_name}-{dataset}.pkl'

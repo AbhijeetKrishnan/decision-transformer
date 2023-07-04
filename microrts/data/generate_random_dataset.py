@@ -35,7 +35,8 @@ def generate_random_dataset(num_episodes: int=10):
     env.close()
 
     dataset['observations'] = np.array(dataset['observations'])
-    dataset['actions'] = np.array(dataset['actions'])
+    dataset['actions'] = np.eye(env.action_space.n)[dataset['actions']] # convert array of action integers into array of one-hot encoded arrays
+    # print(dataset['actions'])
     dataset['rewards'] = np.array(dataset['rewards'])
     dataset['terminals'] = np.array(dataset['terminals'])
     dataset['timeouts'] = np.array(dataset['timeouts'])

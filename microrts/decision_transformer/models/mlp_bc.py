@@ -28,7 +28,8 @@ class MLPBCModel(TrajectoryModel):
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_size, self.act_dim),
-            nn.Tanh(),
+            # nn.Tanh()
+            nn.Softmax()
         ])
 
         self.model = nn.Sequential(*layers)
@@ -37,6 +38,9 @@ class MLPBCModel(TrajectoryModel):
 
         states = states[:,-self.max_length:].reshape(states.shape[0], -1)  # concat states
         actions = self.model(states).reshape(states.shape[0], 1, self.act_dim)
+        # actions_softmax = actions.softmax(dim=0) # get softmax of last layer of action head for selecting action "class"
+        # print(actions)
+        # print(actions_softmax)
 
         return None, actions, None
 
@@ -48,4 +52,6 @@ class MLPBCModel(TrajectoryModel):
                              dtype=torch.float32, device=states.device), states], dim=1)
         states = states.to(dtype=torch.float32)
         _, actions, _ = self.forward(states, None, None, **kwargs)
-        return actions[0,-1]
+        action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max log-probability
+        # print('Action', action)
+        return action

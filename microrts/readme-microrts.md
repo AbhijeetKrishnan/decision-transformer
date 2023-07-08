@@ -9,16 +9,16 @@ Then, dependencies can be installed with the following command:
 
 ```
 conda env create -f conda_env.yml
+pip install -r requirements.txt
 ```
 
-## Downloading datasets
+## Generating datasets
 
 Datasets are stored in the `data` directory.
-Install the ~~[D4RL repo](https://github.com/rail-berkeley/d4rl)~~, following the instructions there.
-Then, run the following script in order to download the datasets and save them in our format:
+Run the following script in order to generate the datasets and save them in our format:
 
 ```
-python download_d4rl_datasets.py
+python generate_random_dataset.py -n 100
 ```
 
 ## Example usage
@@ -26,7 +26,7 @@ python download_d4rl_datasets.py
 Experiments can be reproduced with the following:
 
 ```
-python experiment.py --env hopper --dataset medium --model_type dt
+python experiment.py --env microrts --dataset random --model_type dt
 ```
 
 Adding `-w True` will log results to Weights and Biases.

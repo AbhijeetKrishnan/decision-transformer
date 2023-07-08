@@ -1,10 +1,11 @@
-import gymnasium
-import numpy as np
-
+import argparse
 import collections
 import pickle
 
 import grammar_synthesis
+import gymnasium
+import numpy as np
+
 
 def generate_random_dataset(num_episodes: int=10):
     with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file: 
@@ -24,7 +25,6 @@ def generate_random_dataset(num_episodes: int=10):
             mask = info["action_mask"]
             action = env.action_space.sample(mask=mask)
             obs, reward, terminated, truncated, info = env.step(action)
-            # print(dataset['observations'].shape, obs.shape)
             dataset['observations'].append(obs)
             dataset['actions'].append(action)
             dataset['rewards'].append(reward)
@@ -34,9 +34,8 @@ def generate_random_dataset(num_episodes: int=10):
         # env.render()
     env.close()
 
-    dataset['observations'] = np.array(dataset['observations']) # TODO: one-hot encode this too
-    dataset['actions'] = np.eye(env.action_space.n)[dataset['actions']] # convert array of action integers into array of one-hot encoded arrays
-    # print(dataset['actions'])
+    dataset['observations'] = np.array(dataset['observations']) # TODO: np.eye(env.vocabulary_size)[dataset['observations']] # one-hot encode tokens in current state
+    dataset['actions'] = np.eye(env.action_space.n)[dataset['actions']] # one-hot encode actions
     dataset['rewards'] = np.array(dataset['rewards'])
     dataset['terminals'] = np.array(dataset['terminals'])
     dataset['timeouts'] = np.array(dataset['timeouts'])
@@ -46,10 +45,12 @@ def generate_random_dataset(num_episodes: int=10):
     return dataset
 
 if __name__ == '__main__':
-    num_datasets = 100
-    datasets = []
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--num_episodes', type=int, default=100)
 
-    dataset = generate_random_dataset(num_datasets)
+    args = parser.parse_args()
+    
+    dataset = generate_random_dataset(args.num_episodes)
 
     N = dataset['rewards'].shape[0]
     data_ = collections.defaultdict(list)

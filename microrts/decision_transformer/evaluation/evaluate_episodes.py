@@ -38,7 +38,6 @@ def evaluate_episode(
         # add padding
         actions = torch.cat([actions, torch.zeros((1, act_dim), device=device)], dim=0)
         rewards = torch.cat([rewards, torch.zeros(1, device=device)])
-        # action_masks = torch.cat([action_masks, torch.zeros((1, act_dim), device=device)], dim=0)
 
         action = model.get_action(
             (states.to(dtype=torch.float32)), # - state_mean) / state_std,

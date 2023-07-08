@@ -18,6 +18,8 @@ class MLPBCModel(TrajectoryModel):
         self.hidden_size = hidden_size
         self.max_length = max_length
 
+        # TODO: replace initial layer with torch.nn.Embedding layer
+        # and simultaneously one-hot encode observation dimension (or keep indices, whatever the layer specifies)
         layers = [nn.Linear(max_length*self.state_dim, hidden_size)]
         for _ in range(n_layer-1):
             layers.extend([
@@ -36,7 +38,6 @@ class MLPBCModel(TrajectoryModel):
 
     def forward(self, states, actions, rewards, action_masks, attention_mask=None, target_return=None):
 
-        # print('forward', states[-1, -1], action_masks[-1, -1], torch.nonzero(action_masks[-1, -1]))
         states = states[:,-self.max_length:].reshape(states.shape[0], -1)  # concat last K states
         actions = self.model(states).reshape(states.shape[0], 1, self.act_dim)
         latest_action_masks = action_masks[:, -1, :].unsqueeze(1) # use latest state's action mask
@@ -48,7 +49,6 @@ class MLPBCModel(TrajectoryModel):
     def get_action(self, states, actions, rewards, action_masks, **kwargs):
         states = states.reshape(1, -1, self.state_dim)
         action_masks = action_masks.reshape(1, -1, self.act_dim)
-        # print('get_action', states[-1, -1], action_masks[-1, -1], torch.nonzero(action_masks[-1, -1]))
         if states.shape[1] < self.max_length:
             states = torch.cat(
                 [torch.zeros((1, self.max_length-states.shape[1], self.state_dim),
@@ -56,5 +56,4 @@ class MLPBCModel(TrajectoryModel):
         states = states.to(dtype=torch.float32)
         _, actions, _ = self.forward(states, None, None, action_masks, **kwargs)
         action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max log-probability
-        # print('Action', action)
         return action

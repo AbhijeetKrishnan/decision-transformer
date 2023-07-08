@@ -51,7 +51,7 @@ class DecisionTransformer(TrajectoryModel):
         )
         self.predict_return = torch.nn.Linear(hidden_size, 1)
 
-    def forward(self, states, actions, rewards, returns_to_go, timesteps, attention_mask=None):
+    def forward(self, states, actions, rewards, returns_to_go, action_masks, timesteps, attention_mask=None):
 
         batch_size, seq_length = states.shape[0], states.shape[1]
 
@@ -100,7 +100,7 @@ class DecisionTransformer(TrajectoryModel):
 
         return state_preds, action_preds, return_preds
 
-    def get_action(self, states, actions, rewards, returns_to_go, timesteps, **kwargs):
+    def get_action(self, states, actions, rewards, returns_to_go, action_masks, timesteps, **kwargs):
         # we don't care about the past rewards in this model
 
         states = states.reshape(1, -1, self.state_dim)

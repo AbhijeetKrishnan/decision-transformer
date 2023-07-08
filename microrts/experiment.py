@@ -49,9 +49,8 @@ def experiment(
     if model_type == 'bc':
         env_targets = env_targets[:1]  # since BC ignores target, no need for different evaluations
 
-    # TODO: fix this - Discrete space has empty .shape tuple
     state_dim = env.observation_space.shape[0]
-    act_dim = env.action_space.n # for discrete environments
+    act_dim = env.action_space.n # for discrete environments, assuming all actions are mapped to integers in a Discrete space
 
     # load dataset
     dataset_path = f'data/{env_name}-{dataset}.pkl'
@@ -111,7 +110,7 @@ def experiment(
             p=p_sample,  # reweights so we sample according to timesteps
         )
 
-        s, a, r, d, rtg, timesteps, mask = [], [], [], [], [], [], []
+        s, a, r, d, rtg, action_masks, timesteps, mask = [], [], [], [], [], [], [], []
         for i in range(batch_size):
             traj = trajectories[int(sorted_inds[batch_inds[i]])]
             si = random.randint(0, traj['rewards'].shape[0] - 1)
@@ -129,15 +128,17 @@ def experiment(
             rtg.append(discount_cumsum(traj['rewards'][si:], gamma=1.)[:s[-1].shape[1] + 1].reshape(1, -1, 1))
             if rtg[-1].shape[1] <= s[-1].shape[1]:
                 rtg[-1] = np.concatenate([rtg[-1], np.zeros((1, 1, 1))], axis=1)
+            action_masks.append(traj['action_masks'][si:si + max_len].reshape(1, -1, act_dim))
 
             # padding and state + reward normalization
             tlen = s[-1].shape[1]
             s[-1] = np.concatenate([np.zeros((1, max_len - tlen, state_dim)), s[-1]], axis=1)
-            s[-1] = (s[-1] - state_mean) / state_std
+            # s[-1] = (s[-1] - state_mean) / state_std
             a[-1] = np.concatenate([np.ones((1, max_len - tlen, act_dim)) * -10., a[-1]], axis=1)
             r[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)), r[-1]], axis=1)
             d[-1] = np.concatenate([np.ones((1, max_len - tlen)) * 2, d[-1]], axis=1)
             rtg[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)), rtg[-1]], axis=1) / scale
+            action_masks[-1] = np.concatenate([np.zeros((1, max_len - tlen, act_dim)), action_masks[-1]], axis=1)
             timesteps[-1] = np.concatenate([np.zeros((1, max_len - tlen)), timesteps[-1]], axis=1)
             mask.append(np.concatenate([np.zeros((1, max_len - tlen)), np.ones((1, tlen))], axis=1))
 
@@ -146,10 +147,11 @@ def experiment(
         r = torch.from_numpy(np.concatenate(r, axis=0)).to(dtype=torch.float32, device=device)
         d = torch.from_numpy(np.concatenate(d, axis=0)).to(dtype=torch.long, device=device)
         rtg = torch.from_numpy(np.concatenate(rtg, axis=0)).to(dtype=torch.float32, device=device)
+        action_masks = torch.from_numpy(np.concatenate(action_masks, axis=0)).to(dtype=torch.bool, device=device)
         timesteps = torch.from_numpy(np.concatenate(timesteps, axis=0)).to(dtype=torch.long, device=device)
         mask = torch.from_numpy(np.concatenate(mask, axis=0)).to(device=device)
 
-        return s, a, r, d, rtg, timesteps, mask
+        return s, a, r, d, rtg, action_masks, timesteps, mask
 
     def eval_episodes(target_rew):
         def fn(model):
@@ -249,7 +251,7 @@ def experiment(
             batch_size=batch_size,
             get_batch=get_batch,
             scheduler=scheduler,
-            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.mean((a_hat - a)**2),
+            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.mean((a_hat - a)**2),## TODO: replace loss fn with cross-entropy loss
             eval_fns=[eval_episodes(tar) for tar in env_targets],
         )
 

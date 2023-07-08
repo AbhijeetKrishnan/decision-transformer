@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 
 from decision_transformer.models.model import TrajectoryModel
+from decision_transformer.models.CategoricalMasked import CategoricalMasked
 
 
 class MLPBCModel(TrajectoryModel):
@@ -28,30 +29,32 @@ class MLPBCModel(TrajectoryModel):
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_size, self.act_dim),
-            # nn.Tanh()
-            nn.Softmax()
+            nn.Tanh()
         ])
 
         self.model = nn.Sequential(*layers)
 
-    def forward(self, states, actions, rewards, attention_mask=None, target_return=None):
+    def forward(self, states, actions, rewards, action_masks, attention_mask=None, target_return=None):
 
-        states = states[:,-self.max_length:].reshape(states.shape[0], -1)  # concat states
+        # print('forward', states[-1, -1], action_masks[-1, -1], torch.nonzero(action_masks[-1, -1]))
+        states = states[:,-self.max_length:].reshape(states.shape[0], -1)  # concat last K states
         actions = self.model(states).reshape(states.shape[0], 1, self.act_dim)
-        # actions_softmax = actions.softmax(dim=0) # get softmax of last layer of action head for selecting action "class"
-        # print(actions)
-        # print(actions_softmax)
+        latest_action_masks = action_masks[:, -1, :].unsqueeze(1) # use latest state's action mask
+        masked_action_categoricals = [CategoricalMasked(logits=action, mask=latest_action_mask).probs for (action, latest_action_mask) in zip(actions, latest_action_masks)]
+        masked_action_categoricals = torch.stack(masked_action_categoricals)
 
-        return None, actions, None
+        return None, masked_action_categoricals, None
 
-    def get_action(self, states, actions, rewards, **kwargs):
+    def get_action(self, states, actions, rewards, action_masks, **kwargs):
         states = states.reshape(1, -1, self.state_dim)
+        action_masks = action_masks.reshape(1, -1, self.act_dim)
+        # print('get_action', states[-1, -1], action_masks[-1, -1], torch.nonzero(action_masks[-1, -1]))
         if states.shape[1] < self.max_length:
             states = torch.cat(
                 [torch.zeros((1, self.max_length-states.shape[1], self.state_dim),
                              dtype=torch.float32, device=states.device), states], dim=1)
         states = states.to(dtype=torch.float32)
-        _, actions, _ = self.forward(states, None, None, **kwargs)
+        _, actions, _ = self.forward(states, None, None, action_masks, **kwargs)
         action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max log-probability
         # print('Action', action)
         return action

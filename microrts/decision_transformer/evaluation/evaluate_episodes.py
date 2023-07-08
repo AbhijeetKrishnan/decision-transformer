@@ -29,6 +29,7 @@ def evaluate_episode(
     actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
     rewards = torch.zeros(0, device=device, dtype=torch.float32)
     target_return = torch.tensor(target_return, device=device, dtype=torch.float32)
+    action_masks = torch.from_numpy(info['action_mask']).reshape(1, act_dim).to(device=device, dtype=torch.bool)
     sim_states = []
 
     episode_return, episode_length = 0, 0
@@ -37,21 +38,24 @@ def evaluate_episode(
         # add padding
         actions = torch.cat([actions, torch.zeros((1, act_dim), device=device)], dim=0)
         rewards = torch.cat([rewards, torch.zeros(1, device=device)])
+        # action_masks = torch.cat([action_masks, torch.zeros((1, act_dim), device=device)], dim=0)
 
         action = model.get_action(
-            (states.to(dtype=torch.float32) - state_mean) / state_std,
+            (states.to(dtype=torch.float32)), # - state_mean) / state_std,
             actions.to(dtype=torch.float32),
             rewards.to(dtype=torch.float32),
+            action_masks.to(dtype=torch.bool),
             target_return=target_return,
         )
         actions[-1] = action
         action = action.detach().cpu().numpy()
-        print(action)
         
-        state, reward, done, _ = env.step(action)
+        state, reward, done, truncated, info = env.step(action)
 
         cur_state = torch.from_numpy(state).to(device=device).reshape(1, state_dim)
+        cur_action_mask = torch.from_numpy(info['action_mask']).reshape(1, act_dim).to(device=device, dtype=torch.bool)
         states = torch.cat([states, cur_state], dim=0)
+        action_masks = torch.cat([action_masks, cur_action_mask], dim=0)
         rewards[-1] = reward
 
         episode_return += reward

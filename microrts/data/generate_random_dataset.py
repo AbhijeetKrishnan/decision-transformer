@@ -15,7 +15,7 @@ def generate_random_dataset(num_episodes: int=10):
         "rewards": [],
         "terminals": [],
         "timeouts": [],
-        "infos": [],
+        "action_masks": [],
     }
     for _ in range(num_episodes):
         obs, info, terminated, truncated = *env.reset(), False, False
@@ -23,23 +23,24 @@ def generate_random_dataset(num_episodes: int=10):
             # env.render()
             mask = info["action_mask"]
             action = env.action_space.sample(mask=mask)
-            obs, terminated, reward, truncated, info = env.step(action)
+            obs, reward, terminated, truncated, info = env.step(action)
             # print(dataset['observations'].shape, obs.shape)
             dataset['observations'].append(obs)
             dataset['actions'].append(action)
             dataset['rewards'].append(reward)
             dataset['terminals'].append(terminated)
             dataset['timeouts'].append(truncated)
-            dataset['infos'].append(info)
+            dataset['action_masks'].append(mask)
         # env.render()
     env.close()
 
-    dataset['observations'] = np.array(dataset['observations'])
+    dataset['observations'] = np.array(dataset['observations']) # TODO: one-hot encode this too
     dataset['actions'] = np.eye(env.action_space.n)[dataset['actions']] # convert array of action integers into array of one-hot encoded arrays
     # print(dataset['actions'])
     dataset['rewards'] = np.array(dataset['rewards'])
     dataset['terminals'] = np.array(dataset['terminals'])
     dataset['timeouts'] = np.array(dataset['timeouts'])
+    dataset['action_masks'] = np.array(dataset['action_masks'])
 
     print(f'Generated {dataset["rewards"].shape[0]} samples')
     return dataset
@@ -65,7 +66,7 @@ if __name__ == '__main__':
             final_timestep = dataset['timeouts'][i]
         else:
             final_timestep = (episode_step == 1000-1)
-        for k in ['observations', 'actions', 'rewards', 'terminals']:
+        for k in ['observations', 'actions', 'rewards', 'terminals', 'action_masks']:
             data_[k].append(dataset[k][i])
         if done_bool or final_timestep:
             episode_step = 0

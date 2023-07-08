@@ -12,10 +12,10 @@ class TrajectoryModel(nn.Module):
         self.act_dim = act_dim
         self.max_length = max_length
 
-    def forward(self, states, actions, rewards, masks=None, attention_mask=None):
+    def forward(self, states, actions, rewards, action_masks, masks=None, attention_mask=None):
         # "masked" tokens or unspecified inputs can be passed in as None
         return None, None, None
 
-    def get_action(self, states, actions, rewards, **kwargs):
+    def get_action(self, states, actions, rewards, action_masks, **kwargs):
         # these will come as tensors on the correct device
         return torch.zeros_like(actions[-1])

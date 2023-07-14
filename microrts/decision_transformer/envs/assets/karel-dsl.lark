@@ -1,0 +1,31 @@
+// EBNF grammar for the Karel DSL
+
+
+program: "DEF run m(" stmt "m)"
+
+stmt: "REPEAT" cste "r(" stmt "r)" 
+    | stmt stmt 
+    | action 
+    | "IF c(" cond "c) i(" stmt "i)" 
+    | "IFELSE c(" cond "c) i(" stmt "i) ELSE e(" stmt "e)"
+    | "WHILE c(" cond "c) w(" stmt "w)" 
+
+cond: "not" cond_without_not | cond_without_not
+
+cond_without_not: "front_is_clear"
+    | "left_is_clear"
+    | "right_is_clear"
+    | "markers_present"
+    | "no_markers_present"
+
+action: "move"
+    | "turn_right"
+    | "turn_left"
+    | "pick_marker"
+    | "put_marker"
+
+cste: "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+    | "10" // | "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19"
+
+%import common.WS
+%ignore WS

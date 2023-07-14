@@ -6,10 +6,12 @@ import grammar_synthesis
 import gymnasium
 import numpy as np
 
+from karel_reward import karel_reward
 
-def generate_random_dataset(num_episodes: int=10):
-    with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file: 
-        env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda symbols: len(symbols), parser='lalr')
+
+def generate_random_dataset(grammar_file: str, num_episodes: int=10):
+    with open(grammar_file) as dsl_file: 
+        env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr')
     dataset = {
         "observations": [],
         "actions": [],
@@ -46,11 +48,15 @@ def generate_random_dataset(num_episodes: int=10):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='microrts')
     parser.add_argument('-n', '--num_episodes', type=int, default=100)
 
     args = parser.parse_args()
+
+    grammar = args.grammar
+    grammar_file = f'decision_transformer/envs/assets/{grammar}-dsl.lark'
     
-    dataset = generate_random_dataset(args.num_episodes)
+    dataset = generate_random_dataset(grammar_file, args.num_episodes)
 
     N = dataset['rewards'].shape[0]
     data_ = collections.defaultdict(list)
@@ -83,5 +89,5 @@ if __name__ == '__main__':
     print(f'Number of samples collected: {num_samples}')
     print(f'Trajectory returns: mean = {np.mean(returns)}, std = {np.std(returns)}, max = {np.max(returns)}, min = {np.min(returns)}')
 
-    with open(f'data/microrts-random.pkl', 'wb') as f:
+    with open(f'data/{grammar}-random.pkl', 'wb') as f:
         pickle.dump(paths, f)

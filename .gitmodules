@@ -1,0 +1,3 @@
+[submodule "microrts/leaps"]
+	path = microrts/leaps
+	url = git@github.com:clvrai/leaps.git

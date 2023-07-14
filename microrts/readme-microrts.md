@@ -18,7 +18,7 @@ Datasets are stored in the `data` directory.
 Run the following script in order to generate the datasets and save them in our format:
 
 ```
-python generate_random_dataset.py -n 100
+python generate_random_dataset.py -g microrts -n 100
 ```
 
 ## Example usage

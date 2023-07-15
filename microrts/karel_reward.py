@@ -7,11 +7,9 @@ class Container(object):
     pass
 
 
-def karel_reward(symbols, env):
-    parser = env.parser
-    program = ' '.join(str(parser.get_terminal(symbol.name).pattern) for symbol in symbols)
-    program = program.replace('\\', '').replace('\'', '')
-    print(program)
+def karel_reward(program_text):
+    program = program_text.replace('\\', '').replace('\'', '')
+    # print(program)
 
     config = Container()
     config.env_name = 'karel'

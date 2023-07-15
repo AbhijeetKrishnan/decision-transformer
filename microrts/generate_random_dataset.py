@@ -23,7 +23,6 @@ def generate_random_dataset(grammar_file: str, num_episodes: int=10):
     for _ in range(num_episodes):
         obs, info, terminated, truncated = *env.reset(), False, False
         while not terminated and not truncated:
-            # env.render()
             mask = info["action_mask"]
             action = env.action_space.sample(mask=mask)
             obs, reward, terminated, truncated, info = env.step(action)
@@ -33,7 +32,6 @@ def generate_random_dataset(grammar_file: str, num_episodes: int=10):
             dataset['terminals'].append(terminated)
             dataset['timeouts'].append(truncated)
             dataset['action_masks'].append(mask)
-        # env.render()
     env.close()
 
     dataset['observations'] = np.array(dataset['observations']) # TODO: np.eye(env.vocabulary_size)[dataset['observations']] # one-hot encode tokens in current state
@@ -50,11 +48,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='microrts')
     parser.add_argument('-n', '--num_episodes', type=int, default=100)
-
     args = parser.parse_args()
 
     grammar = args.grammar
-    grammar_file = f'decision_transformer/envs/assets/{grammar}-dsl.lark'
+
+    if grammar == 'microrts':
+        grammar_file = 'decision_transformer/envs/assets/microrts-dsl.lark'
+    elif grammar == 'karel':
+        grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.lark'
     
     dataset = generate_random_dataset(grammar_file, args.num_episodes)
 
@@ -89,5 +90,7 @@ if __name__ == '__main__':
     print(f'Number of samples collected: {num_samples}')
     print(f'Trajectory returns: mean = {np.mean(returns)}, std = {np.std(returns)}, max = {np.max(returns)}, min = {np.min(returns)}')
 
-    with open(f'data/{grammar}-random.pkl', 'wb') as f:
+    datapath = f'data/{grammar}-random.pkl'
+    with open(datapath, 'wb') as f:
         pickle.dump(paths, f)
+        print(f'Wrote trajectories to {datapath}')

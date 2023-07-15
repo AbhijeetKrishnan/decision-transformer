@@ -8,7 +8,6 @@ import gymnasium
 import numpy as np
 import torch
 import wandb
-from microrts.karel_reward import karel_reward
 from decision_transformer.evaluation.evaluate_episodes import (
     evaluate_episode, evaluate_episode_rtg)
 from decision_transformer.models.decision_transformer import \
@@ -16,6 +15,7 @@ from decision_transformer.models.decision_transformer import \
 from decision_transformer.models.mlp_bc import MLPBCModel
 from decision_transformer.training.act_trainer import ActTrainer
 from decision_transformer.training.seq_trainer import SequenceTrainer
+from karel_reward import karel_reward
 
 
 def discount_cumsum(x, gamma):
@@ -40,12 +40,12 @@ def experiment(
 
     if env_name == 'microrts':
         with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file:
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda symbols, _: len(symbols), parser='lalr')
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda program_text: len(program_text), parser='lalr')
         max_ep_len = env.max_len
         env_targets = [2, 1] # TODO: find out what these evaluation conditioning targets should be
         scale = 1000. # TODO: find out what this should be
     elif env_name == 'karel':
-        with open('decision_transformer/envs/assets/karel-dsl.lark') as dsl_file:
+        with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr')
         max_ep_len = env.max_len
         env_targets = [2, 1]

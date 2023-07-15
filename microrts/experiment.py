@@ -269,7 +269,7 @@ def experiment(
             project='decision-transformer',
             config=variant
         )
-        # wandb.watch(model)  # wandb has some bug
+        wandb.watch(model)
 
     for iter in range(variant['max_iters']):
         outputs = trainer.train_iteration(num_steps=variant['num_steps_per_iter'], iter_num=iter+1, print_logs=True)

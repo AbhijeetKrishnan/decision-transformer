@@ -95,6 +95,7 @@ def evaluate_episode_rtg(
     states = torch.from_numpy(state).reshape(1, state_dim).to(device=device, dtype=torch.float32)
     actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
     rewards = torch.zeros(0, device=device, dtype=torch.float32)
+    action_masks = torch.from_numpy(info['action_mask']).reshape(1, act_dim).to(device=device, dtype=torch.bool)
 
     ep_return = target_return
     target_return = torch.tensor(ep_return, device=device, dtype=torch.float32).reshape(1, 1)
@@ -114,15 +115,18 @@ def evaluate_episode_rtg(
             actions.to(dtype=torch.float32),
             rewards.to(dtype=torch.float32),
             target_return.to(dtype=torch.float32),
+            action_masks.to(dtype=torch.bool),
             timesteps.to(dtype=torch.long),
         )
         actions[-1] = action
         action = action.detach().cpu().numpy()
 
-        state, reward, done, _ = env.step(action)
+        state, reward, done, truncated, info = env.step(action)
 
         cur_state = torch.from_numpy(state).to(device=device).reshape(1, state_dim)
+        cur_action_mask = torch.from_numpy(info['action_mask']).reshape(1, act_dim).to(device=device, dtype=torch.bool)
         states = torch.cat([states, cur_state], dim=0)
+        action_masks = torch.cat([action_masks, cur_action_mask], dim=0)
         rewards[-1] = reward
 
         if mode != 'delayed':

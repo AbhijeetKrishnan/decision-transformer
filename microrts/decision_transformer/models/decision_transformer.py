@@ -6,6 +6,7 @@ import transformers
 
 from decision_transformer.models.model import TrajectoryModel
 from decision_transformer.models.trajectory_gpt2 import GPT2Model
+from decision_transformer.models.CategoricalMasked import CategoricalMasked
 
 
 class DecisionTransformer(TrajectoryModel):
@@ -97,8 +98,11 @@ class DecisionTransformer(TrajectoryModel):
         return_preds = self.predict_return(x[:,2])  # predict next return given state and action
         state_preds = self.predict_state(x[:,2])    # predict next state given state and action
         action_preds = self.predict_action(x[:,1])  # predict next action given state
+        latest_action_masks = action_masks[:, -1, :].unsqueeze(1) # use latest state's action mask
+        masked_action_categoricals = [CategoricalMasked(logits=action, mask=latest_action_mask).probs for (action, latest_action_mask) in zip(action_preds, latest_action_masks)]
+        masked_action_categoricals = torch.stack(masked_action_categoricals)
 
-        return state_preds, action_preds, return_preds
+        return state_preds, masked_action_categoricals, return_preds
 
     def get_action(self, states, actions, rewards, returns_to_go, action_masks, timesteps, **kwargs):
         # we don't care about the past rewards in this model
@@ -106,6 +110,7 @@ class DecisionTransformer(TrajectoryModel):
         states = states.reshape(1, -1, self.state_dim)
         actions = actions.reshape(1, -1, self.act_dim)
         returns_to_go = returns_to_go.reshape(1, -1, 1)
+        action_masks = action_masks.reshape(1, -1, self.act_dim)
         timesteps = timesteps.reshape(1, -1)
 
         if self.max_length is not None:
@@ -135,6 +140,6 @@ class DecisionTransformer(TrajectoryModel):
             attention_mask = None
 
         _, action_preds, return_preds = self.forward(
-            states, actions, None, returns_to_go, timesteps, attention_mask=attention_mask, **kwargs)
-
-        return action_preds[0,-1]
+            states, actions, None, returns_to_go, action_masks, timesteps, attention_mask=attention_mask, **kwargs)
+        action = action_preds[0, -1].max(0, keepdim=True)[1][0] # get index of max log-probability
+        return action

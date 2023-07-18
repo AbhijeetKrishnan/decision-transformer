@@ -13,7 +13,7 @@ def karel_reward(program_text):
 
     config = Container()
     config.env_name = 'karel'
-    config.env_task = 'cleanHouse' # ['program', 'cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff']
+    config.env_task = 'cleanHouse' # ['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff']
     config.width = 22
     config.height = 14
     config.wall_prob = 0.25

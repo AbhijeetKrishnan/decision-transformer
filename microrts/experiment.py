@@ -6,6 +6,7 @@ import sys
 import grammar_synthesis
 import gymnasium
 import numpy as np
+import tables as tb
 import torch
 import wandb
 from decision_transformer.evaluation.evaluate_episodes import (
@@ -24,6 +25,16 @@ def discount_cumsum(x, gamma):
     for t in reversed(range(x.shape[0]-1)):
         discount_cumsum[t] = x[t] + gamma * discount_cumsum[t+1]
     return discount_cumsum
+
+def read_list_of_dicts_from_hdf5(filename):
+    data_list = []
+    with tb.File(filename, 'r') as f:
+        for node in f.iter_nodes(where='/'):
+            data_dict = {}
+            for array_key in node:
+                data_dict[array_key.name] = array_key.read()
+            data_list.append(data_dict)
+    return data_list
 
 
 def experiment(
@@ -60,9 +71,11 @@ def experiment(
     act_dim = env.action_space.n # for discrete environments, assuming all actions are mapped to integers in a Discrete space
 
     # load dataset
-    dataset_path = f'data/{env_name}-{dataset}.pkl'
-    with open(dataset_path, 'rb') as f:
-        trajectories = pickle.load(f)
+    # dataset_path = f'data/{env_name}-{dataset}.pkl'
+    # with open(dataset_path, 'rb') as f:
+    #     trajectories = pickle.load(f)
+    dataset_path = f'data/{env_name}-{dataset}.h5'
+    trajectories = read_list_of_dicts_from_hdf5(dataset_path)
 
     # save all path information into separate lists
     mode = variant.get('mode', 'normal')
@@ -124,7 +137,7 @@ def experiment(
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
-            a.append(traj['actions'][si:si + max_len].reshape(1, -1, act_dim))
+            a.append(np.eye(env.action_space.n)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim))
             r.append(traj['rewards'][si:si + max_len].reshape(1, -1, 1))
             if 'terminals' in traj:
                 d.append(traj['terminals'][si:si + max_len].reshape(1, -1))

@@ -1,7 +1,6 @@
 import argparse
 import collections
-import gc
-from memory_profiler import profile
+import pickle
 
 import grammar_synthesis
 import gymnasium
@@ -10,10 +9,8 @@ import tables as tb
 from karel_reward import karel_reward
 
 
-@profile
-def generate_random_dataset(grammar_file: str, num_episodes: int=10, seed: int=None):
-    with open(grammar_file) as dsl_file: 
-        env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr')
+def generate_random_dataset(env, num_episodes: int=10, seed: int=None):
+    
     dataset = {
         "observations": [],
         "actions": [],
@@ -25,7 +22,7 @@ def generate_random_dataset(grammar_file: str, num_episodes: int=10, seed: int=N
     for _ in range(num_episodes):
         obs, info, terminated, truncated = *env.reset(seed=seed), False, False
         while not terminated and not truncated:
-            mask = info["action_mask"]
+            mask = info['action_mask']
             action = env.action_space.sample(mask=mask)
             obs, reward, terminated, truncated, info = env.step(action)
             dataset['observations'].append(obs)
@@ -33,7 +30,7 @@ def generate_random_dataset(grammar_file: str, num_episodes: int=10, seed: int=N
             dataset['rewards'].append(reward)
             dataset['terminals'].append(terminated)
             dataset['timeouts'].append(truncated)
-            dataset['action_masks'].append(mask)
+            dataset['action_masks'].append(np.array(mask, dtype=np.bool_))
     env.close()
 
     dataset['observations'] = np.array(dataset['observations']) # TODO: np.eye(env.vocabulary_size)[dataset['observations']] # one-hot encode tokens in current state
@@ -41,7 +38,7 @@ def generate_random_dataset(grammar_file: str, num_episodes: int=10, seed: int=N
     dataset['rewards'] = np.array(dataset['rewards'])
     dataset['terminals'] = np.array(dataset['terminals'])
     dataset['timeouts'] = np.array(dataset['timeouts'])
-    dataset['action_masks'] = np.array(dataset['action_masks'])
+    dataset['action_masks'] = np.array(dataset['action_masks'], np.bool_)
 
     return dataset
 
@@ -51,23 +48,31 @@ def write_list_of_dicts_to_hdf5(filename, data_list, base_idx: int=0):
             group = f.create_group('/', f'dict_{base_idx + idx}')
             for key, value in data_dict.items():
                 f.create_array(group, key, value)
+        f.flush()
 
-@profile
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='microrts')
     parser.add_argument('-n', '--num_episodes', type=int, default=100)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--batch_size', type=int, default=5000)
+    parser.add_argument('-f', '--format', choices=['h5', 'pkl'], default='h5')
+    parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     args = parser.parse_args()
 
     grammar = args.grammar
 
     if grammar == 'microrts':
         grammar_file = 'decision_transformer/envs/assets/microrts-dsl.lark'
+        datapath = f'data/{grammar}-random.{args.format}'
+        with open(grammar_file) as dsl_file: 
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda program, _: len(program), parser='lalr')
     elif grammar == 'karel':
         grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.lark'
-    datapath = f'data/{grammar}-random.h5'
+        datapath = f'data/{grammar}-{args.karel_task}-random.{args.format}'
+        karel_config = None # TODO: add task-specific Karel config here from LEAPS codebase
+        with open(grammar_file) as dsl_file: 
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr', mdp_config=karel_config)
     
     returns = []
     num_samples = 0 # number of transitions
@@ -76,7 +81,7 @@ def main():
 
     batch_lens = [args.batch_size] * (args.num_episodes // args.batch_size) + ([args.num_episodes % args.batch_size] if args.num_episodes % args.batch_size != 0 else [])
     for batch_idx, batch_size in enumerate(batch_lens):
-        dataset = generate_random_dataset(grammar_file, batch_size, args.seed + batch_idx)
+        dataset = generate_random_dataset(env, batch_size, args.seed + batch_idx)
 
         N = dataset['rewards'].shape[0] # number of episodes
         data_ = collections.defaultdict(list)
@@ -120,9 +125,12 @@ def main():
         if len(batch_programs) > 0:
             print(f'Complete program length in batch {batch_idx + 1}/{len(batch_lens)}: mean = {np.mean(batch_program_length)}, std = {np.std(batch_program_length)}, max = {np.max(batch_program_length)}, min = {np.min(batch_program_length)}')
 
-        write_list_of_dicts_to_hdf5(datapath, paths, batch_idx * args.batch_size)
+        if args.format == 'h5':
+            write_list_of_dicts_to_hdf5(datapath, paths, batch_idx * args.batch_size)
+        elif args.format == 'pkl':
+            with open(datapath, 'ab') as f:
+                pickle.dump(paths, f)
         print(f'Wrote trajectories in batch {batch_idx + 1}/{len(batch_lens)} to {datapath}')
-        # gc.collect()
 
     print('-' * 50)
     print(f'Total number of samples collected: {num_samples}')
@@ -130,10 +138,6 @@ def main():
     print(f'Total number of complete programs: {len(programs)}')
     if len(program_length) > 0:
         print(f'Total complete program length: mean = {np.mean(program_length)}, std = {np.std(program_length)}, max = {np.max(program_length)}, min = {np.min(program_length)}')
-
-        # with open(datapath, 'wb') as f:
-        #     pickle.dump(paths, f)
-        #     print(f'Wrote trajectories to {datapath}')
 
 if __name__ == '__main__':
     main()

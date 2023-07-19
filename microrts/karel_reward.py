@@ -7,7 +7,7 @@ class Container(object):
     pass
 
 
-def karel_reward(program_text):
+def karel_reward(program_text, mdp_config=None):
     program = program_text.replace('\\', '').replace('\'', '')
     # print(program)
 

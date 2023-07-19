@@ -43,23 +43,26 @@ def experiment(
 ):
     device = variant.get('device', 'cuda')
     log_to_wandb = variant.get('log_to_wandb', False)
+    file_format = variant.get('format', 'h5')
 
     env_name, dataset = variant['env'], variant['dataset']
     model_type = variant['model_type']
-    group_name = f'{exp_prefix}-{env_name}-{dataset}'
-    exp_prefix = f'{group_name}-{random.randint(int(1e5), int(1e6) - 1)}'
+    group_name = f'{exp_prefix}-{env_name}-{variant["karel_task"]}-{dataset}'
+    exp_prefix = f'{group_name}-{random.randint(int(1e5), int(1e6) - 1)}' # TODO: turn this into timestamp str
 
     if env_name == 'microrts':
+        dataset_path = f'data/{env_name}-{dataset}.{file_format}'
         with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file:
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda program_text: len(program_text), parser='lalr')
-        max_ep_len = env.max_len
-        env_targets = [2, 1] # TODO: find out what these evaluation conditioning targets should be
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda program_text, _: len(program_text), parser='lalr')
+        max_ep_len = env.max_len # max length of episode is max length of symbols in grammar synthesis MDP
+        env_targets = [1000, 500] # TODO: find out what these evaluation conditioning targets should be
         scale = 1000. # TODO: find out what this should be
     elif env_name == 'karel':
+        dataset_path = f'data/{env_name}-{variant["karel_task"]}-{dataset}.{file_format}'
         with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr')
         max_ep_len = env.max_len
-        env_targets = [2, 1]
+        env_targets = [2000, 1000]
         scale = 1000.
     else:
         raise NotImplementedError
@@ -71,11 +74,11 @@ def experiment(
     act_dim = env.action_space.n # for discrete environments, assuming all actions are mapped to integers in a Discrete space
 
     # load dataset
-    # dataset_path = f'data/{env_name}-{dataset}.pkl'
-    # with open(dataset_path, 'rb') as f:
-    #     trajectories = pickle.load(f)
-    dataset_path = f'data/{env_name}-{dataset}.h5'
-    trajectories = read_list_of_dicts_from_hdf5(dataset_path)
+    if file_format == 'h5':
+        trajectories = read_list_of_dicts_from_hdf5(dataset_path)
+    elif file_format == 'pkl':
+        with open(dataset_path, 'rb') as f:
+            trajectories = pickle.load(f)
 
     # save all path information into separate lists
     mode = variant.get('mode', 'normal')
@@ -96,7 +99,7 @@ def experiment(
     num_timesteps = sum(traj_lens)
 
     print('=' * 50)
-    print(f'Starting new experiment: {env_name} {dataset}')
+    print(f'Starting new experiment: {env_name} {variant["karel_task"]} {dataset}')
     print(f'{len(traj_lens)} trajectories, {num_timesteps} timesteps found')
     print(f'Average return: {np.mean(returns):.2f}, std: {np.std(returns):.2f}')
     print(f'Max return: {np.max(returns):.2f}, min: {np.min(returns):.2f}')
@@ -137,7 +140,7 @@ def experiment(
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
-            a.append(np.eye(env.action_space.n)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim))
+            a.append(np.eye(env.action_space.n)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim)) # TODO: does this work as expected?
             r.append(traj['rewards'][si:si + max_len].reshape(1, -1, 1))
             if 'terminals' in traj:
                 d.append(traj['terminals'][si:si + max_len].reshape(1, -1))
@@ -160,7 +163,7 @@ def experiment(
             rtg[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)), rtg[-1]], axis=1) / scale
             action_masks[-1] = np.concatenate([np.zeros((1, max_len - tlen, act_dim)), action_masks[-1]], axis=1)
             timesteps[-1] = np.concatenate([np.zeros((1, max_len - tlen)), timesteps[-1]], axis=1)
-            mask.append(np.concatenate([np.zeros((1, max_len - tlen)), np.ones((1, tlen))], axis=1))
+            mask.append(np.concatenate([np.zeros((1, max_len - tlen), dtype=np.bool_), np.ones((1, tlen), dtype=np.bool_)], axis=1))
 
         s = torch.from_numpy(np.concatenate(s, axis=0)).to(dtype=torch.float32, device=device)
         a = torch.from_numpy(np.concatenate(a, axis=0)).to(dtype=torch.float32, device=device)
@@ -312,6 +315,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_steps_per_iter', type=int, default=10000)
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--log_to_wandb', '-w', type=bool, default=False)
+    parser.add_argument('--format', choices=['h5', 'pkl'], default='h5')
+    parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     
     args = parser.parse_args()
 

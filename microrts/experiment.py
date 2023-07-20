@@ -58,9 +58,30 @@ def experiment(
         env_targets = [1000, 500] # TODO: find out what these values should be
         scale = 1000. # TODO: find out what these values should be
     elif env_name == 'karel':
-        dataset_path = f'data/{env_name}-{variant["karel_task"]}-{dataset}.{file_format}'
+        karel_task = variant['karel_task']
+        dataset_path = f'data/{env_name}-{karel_task}-{dataset}.{file_format}'
+
+        if karel_task == 'cleanHouse':
+            from leaps.pretrain.leaps_cleanhouse import config
+            karel_task_config = config
+        elif karel_task == 'harvester':
+            from leaps.pretrain.leaps_harvester import config
+            karel_task_config = config
+        elif karel_task == 'fourCorners':
+            from leaps.pretrain.leaps_fourcorners import config
+            karel_task_config = config
+        elif karel_task == 'randomMaze':
+            from leaps.pretrain.leaps_maze import config
+            karel_task_config = config
+        elif karel_task == 'stairClimber':
+            from leaps.pretrain.leaps_stairclimber import config
+            karel_task_config = config
+        elif karel_task == 'topOff':
+            from leaps.pretrain.leaps_topoff import config
+            karel_task_config = config
+
         with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr')
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr', mdp_config=karel_task_config)
         max_ep_len = env.max_len
         env_targets = [2.0, 1.0, 0.5, 0.1]
         scale = 1.

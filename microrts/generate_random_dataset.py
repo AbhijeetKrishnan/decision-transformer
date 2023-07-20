@@ -53,9 +53,9 @@ def write_list_of_dicts_to_hdf5(filename, data_list, base_idx: int=0):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='microrts')
-    parser.add_argument('-n', '--num_episodes', type=int, default=100)
+    parser.add_argument('-n', '--num_episodes', type=int, default=5000)
     parser.add_argument('--seed', type=int, default=None)
-    parser.add_argument('--batch_size', type=int, default=5000)
+    parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('-f', '--format', choices=['h5', 'pkl'], default='h5')
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     args = parser.parse_args()
@@ -69,10 +69,30 @@ def main():
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda program, _: len(program), parser='lalr')
     elif grammar == 'karel':
         grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.lark'
-        datapath = f'data/{grammar}-{args.karel_task}-random.{args.format}'
-        karel_config = None # TODO: add task-specific Karel config here from LEAPS codebase
+        karel_task = args.karel_task
+        datapath = f'data/{grammar}-{karel_task}-random.{args.format}'
+        
+        if karel_task == 'cleanHouse':
+            from leaps.pretrain.leaps_cleanhouse import config
+            karel_task_config = config
+        elif karel_task == 'harvester':
+            from leaps.pretrain.leaps_harvester import config
+            karel_task_config = config
+        elif karel_task == 'fourCorners':
+            from leaps.pretrain.leaps_fourcorners import config
+            karel_task_config = config
+        elif karel_task == 'randomMaze':
+            from leaps.pretrain.leaps_maze import config
+            karel_task_config = config
+        elif karel_task == 'stairClimber':
+            from leaps.pretrain.leaps_stairclimber import config
+            karel_task_config = config
+        elif karel_task == 'topOff':
+            from leaps.pretrain.leaps_topoff import config
+            karel_task_config = config
+        
         with open(grammar_file) as dsl_file: 
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr', mdp_config=karel_config)
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr', mdp_config=karel_task_config)
     
     returns = []
     num_samples = 0 # number of transitions

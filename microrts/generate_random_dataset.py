@@ -78,6 +78,7 @@ def main():
     num_samples = 0 # number of transitions
     programs = []
     program_length = []
+    traj_lens = []
 
     batch_lens = [args.batch_size] * (args.num_episodes // args.batch_size) + ([args.num_episodes % args.batch_size] if args.num_episodes % args.batch_size != 0 else [])
     for batch_idx, batch_size in enumerate(batch_lens):
@@ -113,17 +114,20 @@ def main():
         batch_num_samples = np.sum([p['rewards'].shape[0] for p in paths])
         batch_programs = [dataset['observations'][i] for i in range(len(dataset['observations'])) if dataset['terminals'][i]]
         batch_program_length = [np.nonzero(dataset['observations'][i])[0][-1] + 1 for i in range(len(dataset['observations'])) if dataset['terminals'][i]]
-
+        batch_traj_lens = [len(p['observations']) for p in paths]
+        
         returns += batch_returns
         num_samples += batch_num_samples
         programs += batch_programs
         program_length += batch_program_length
+        traj_lens += batch_traj_lens
 
         print(f'Number of samples collected in batch {batch_idx + 1}/{len(batch_lens)}: {batch_num_samples}')
         print(f'Trajectory returns in batch {batch_idx + 1}/{len(batch_lens)}: mean = {np.mean(batch_returns)}, std = {np.std(batch_returns)}, max = {np.max(batch_returns)}, min = {np.min(returns)}')
         print(f'Number of complete programs in batch {batch_idx + 1}/{len(batch_lens)}: {len(batch_programs)}')
         if len(batch_programs) > 0:
             print(f'Complete program length in batch {batch_idx + 1}/{len(batch_lens)}: mean = {np.mean(batch_program_length)}, std = {np.std(batch_program_length)}, max = {np.max(batch_program_length)}, min = {np.min(batch_program_length)}')
+        print(f'Episode lengths in batch {batch_idx + 1}/{len(batch_lens)}: mean = {np.mean(batch_traj_lens)}, std = {np.std(batch_traj_lens)}, max = {np.max(batch_traj_lens)}, min = {np.min(batch_traj_lens)}')
 
         if args.format == 'h5':
             write_list_of_dicts_to_hdf5(datapath, paths, batch_idx * args.batch_size)
@@ -138,6 +142,7 @@ def main():
     print(f'Total number of complete programs: {len(programs)}')
     if len(program_length) > 0:
         print(f'Total complete program length: mean = {np.mean(program_length)}, std = {np.std(program_length)}, max = {np.max(program_length)}, min = {np.min(program_length)}')
+    print(f'Total episode lengths: mean = {np.mean(traj_lens)}, std = {np.std(traj_lens)}, max = {np.max(traj_lens)}, min = {np.min(traj_lens)}')
 
 if __name__ == '__main__':
     main()

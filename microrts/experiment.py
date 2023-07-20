@@ -55,15 +55,15 @@ def experiment(
         with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda program_text, _: len(program_text), parser='lalr')
         max_ep_len = env.max_len # max length of episode is max length of symbols in grammar synthesis MDP
-        env_targets = [1000, 500] # TODO: find out what these evaluation conditioning targets should be
-        scale = 1000. # TODO: find out what this should be
+        env_targets = [1000, 500] # TODO: find out what these values should be
+        scale = 1000. # TODO: find out what these values should be
     elif env_name == 'karel':
         dataset_path = f'data/{env_name}-{variant["karel_task"]}-{dataset}.{file_format}'
         with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr')
         max_ep_len = env.max_len
-        env_targets = [2000, 1000]
-        scale = 1000.
+        env_targets = [2.0, 1.0, 0.5, 0.1]
+        scale = 1.
     else:
         raise NotImplementedError
 
@@ -295,27 +295,27 @@ def experiment(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, default='microrts')
-    parser.add_argument('--dataset', type=str, default='random') # random
-    parser.add_argument('--mode', type=str, default='normal')  # normal for standard setting, delayed for sparse
-    parser.add_argument('--K', type=int, default=20) # context length
-    parser.add_argument('--pct_traj', type=float, default=1.)
-    parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--model_type', type=str, default='dt') # dt for decision transformer, bc for behavior cloning
-    parser.add_argument('--embed_dim', type=int, default=128)
-    parser.add_argument('--n_layer', type=int, default=3)
-    parser.add_argument('--n_head', type=int, default=1)
-    parser.add_argument('--activation_function', type=str, default='relu')
-    parser.add_argument('--dropout', type=float, default=0.1)
-    parser.add_argument('--learning_rate', '-lr', type=float, default=1e-4)
-    parser.add_argument('--weight_decay', '-wd', type=float, default=1e-4)
-    parser.add_argument('--warmup_steps', type=int, default=10000)
-    parser.add_argument('--num_eval_episodes', type=int, default=100)
-    parser.add_argument('--max_iters', type=int, default=10)
-    parser.add_argument('--num_steps_per_iter', type=int, default=10000)
+    parser.add_argument('--env', type=str, default='microrts', help='Environment to use')
+    parser.add_argument('--dataset', type=str, default='random', help='Dataset to use for training (identified by policy used for generation)') # random
+    parser.add_argument('--mode', choices=['normal', 'delayed'], default='normal', help='"normal" for standard setting, "delayed" for moving rewards to end of trajectory')  # 'normal' for standard setting, 'delayed' for sparse
+    parser.add_argument('--K', type=int, default=20, help='Context length') # context length
+    parser.add_argument('--pct_traj', type=float, default=1., help='Use top x% of trajectories (for %BC experiments)')
+    parser.add_argument('--batch_size', type=int, default=64, help='Number of transitions to sample from a trajectory in a batch')
+    parser.add_argument('--model_type', choices=['bc', 'dt'], default='dt', help='"dt" for decision transformer, "bc" for behavior cloning') # dt for decision transformer, bc for behavior cloning
+    parser.add_argument('--embed_dim', type=int, default=128, help='Size of (state, action, timestep) embedding layers')
+    parser.add_argument('--n_layer', type=int, default=3, help='Number of hidden layers in the Transformer encoder')
+    parser.add_argument('--n_head', type=int, default=1, help='Number of attention heads for each attention layer in the Transformer encoder')
+    parser.add_argument('--activation_function', choices=['relu', 'silu', 'gelu', 'tanh', 'gelu_new'], default='relu', help='Activation function')
+    parser.add_argument('--dropout', type=float, default=0.1, help='Dropout value to use for Transformer embeddings, encoder, pooler and attention')
+    parser.add_argument('--learning_rate', '-lr', type=float, default=1e-4, help='Learning rate parameter for AdamW optimizer')
+    parser.add_argument('--weight_decay', '-wd', type=float, default=1e-4, help='Weight decay parameter for AdamW optimizer')
+    parser.add_argument('--warmup_steps', type=int, default=10000, help='Number of warmup steps for linear learning rate scheduling')
+    parser.add_argument('--num_eval_episodes', type=int, default=100, help='Number of rollouts to sample to evaluate obtained return')
+    parser.add_argument('--max_iters', type=int, default=10, help='Number of (train, eval) cycles to run')
+    parser.add_argument('--num_steps_per_iter', type=int, default=10000, help='Number of (train, loss, backprop) steps to run per iteration')
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--log_to_wandb', '-w', type=bool, default=False)
-    parser.add_argument('--format', choices=['h5', 'pkl'], default='h5')
+    parser.add_argument('--format', choices=['h5', 'pkl'], default='h5', help='Format in which input dataset is stored')
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     
     args = parser.parse_args()

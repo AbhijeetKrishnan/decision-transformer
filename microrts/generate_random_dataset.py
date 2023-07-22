@@ -58,19 +58,19 @@ def get_batch_stats(batch):
 def print_batch_stats(batch_idx, batch_returns, batch_program_length, batch_traj_lens):
     print('-' * 50)
     print(f'Number of samples collected in batch {batch_idx + 1}: {np.sum(batch_traj_lens)}')
-    print(f'Trajectory returns in batch {batch_idx + 1}: mean = {np.mean(batch_returns):.2f}, std = {np.std(batch_returns):.2f}, max = {np.max(batch_returns)}, min = {np.min(batch_returns)}')
+    print(f'Trajectory returns in batch {batch_idx + 1}: mean = {np.mean(batch_returns):.2f}, std = {np.std(batch_returns):.2f}, max = {np.max(batch_returns):.2f}, min = {np.min(batch_returns):.2f}')
     print(f'Number of complete programs in batch {batch_idx + 1}: {len(batch_program_length)}')
     if len(batch_program_length) > 0:
-        print(f'Complete program length in batch {batch_idx + 1}: mean = {np.mean(batch_program_length):.2f}, std = {np.std(batch_program_length):.2f}, max = {np.max(batch_program_length)}, min = {np.min(batch_program_length)}')
-    print(f'Episode lengths in batch {batch_idx + 1}: mean = {np.mean(batch_traj_lens):.2f}, std = {np.std(batch_traj_lens):.2f}, max = {np.max(batch_traj_lens)}, min = {np.min(batch_traj_lens)}')
+        print(f'Complete program length in batch {batch_idx + 1}: mean = {np.mean(batch_program_length):.2f}, std = {np.std(batch_program_length):.2f}, max = {np.max(batch_program_length):.2f}, min = {np.min(batch_program_length):.2f}')
+    print(f'Episode lengths in batch {batch_idx + 1}: mean = {np.mean(batch_traj_lens):.2f}, std = {np.std(batch_traj_lens):.2f}, max = {np.max(batch_traj_lens):.2f}, min = {np.min(batch_traj_lens):.2f}')
     print('-' * 50)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='microrts')
-    parser.add_argument('-n', '--num_episodes', type=int, default=5000)
-    parser.add_argument('-b', '--batch_size', type=int, default=1024, help='Number of transitions in a batch to write to file')
+    parser.add_argument('-n', '--num_episodes', type=int, default=10000)
+    parser.add_argument('-b', '--batch_size', type=int, default=65536, help='Number of transitions in a batch to write to file')
     parser.add_argument('-f', '--format', choices=['h5', 'pkl'], default='h5')
     parser.add_argument('--agent', choices=['random'], default='random')
     parser.add_argument('--seed', type=int, default=None)
@@ -195,11 +195,11 @@ def main():
     # Print total summary statistics
     print('=' * 50)
     print(f'Total number of samples collected: {np.sum(traj_lens)}')
-    print(f'Total trajectory returns: mean = {np.mean(returns):.2f}, std = {np.std(returns):.2f}, max = {np.max(returns)}, min = {np.min(returns)}')
+    print(f'Total trajectory returns: mean = {np.mean(returns):.2f}, std = {np.std(returns):.2f}, max = {np.max(returns):.2f}, min = {np.min(returns):.2f}')
     print(f'Total number of complete programs: {len(program_length)}')
     if len(program_length) > 0:
-        print(f'Total complete program length: mean = {np.mean(program_length):.2f}, std = {np.std(program_length):.2f}, max = {np.max(program_length)}, min = {np.min(program_length)}')
-    print(f'Total episode lengths: mean = {np.mean(traj_lens):.2f}, std = {np.std(traj_lens):.2f}, max = {np.max(traj_lens)}, min = {np.min(traj_lens)}')
+        print(f'Total complete program length: mean = {np.mean(program_length):.2f}, std = {np.std(program_length):.2f}, max = {np.max(program_length):.2f}, min = {np.min(program_length):.2f}')
+    print(f'Total episode lengths: mean = {np.mean(traj_lens):.2f}, std = {np.std(traj_lens):.2f}, max = {np.max(traj_lens):.2f}, min = {np.min(traj_lens):.2f}')
 
 
 if __name__ == '__main__':

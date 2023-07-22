@@ -1,7 +1,7 @@
 import argparse
 import pickle
 import random
-import sys
+from datetime import datetime
 
 import grammar_synthesis
 import gymnasium
@@ -48,7 +48,7 @@ def experiment(
     env_name, dataset = variant['env'], variant['dataset']
     model_type = variant['model_type']
     group_name = f'{exp_prefix}-{env_name}-{variant["karel_task"]}-{dataset}'
-    exp_prefix = f'{group_name}-{random.randint(int(1e5), int(1e6) - 1)}' # TODO: turn this into timestamp str
+    exp_prefix = f'{group_name}-{datetime.now().strftime("%Y%m%d_%H%M%S.%f")}'
 
     if env_name == 'microrts':
         dataset_path = f'data/{env_name}-{dataset}.{file_format}'

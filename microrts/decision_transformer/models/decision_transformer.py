@@ -141,5 +141,7 @@ class DecisionTransformer(TrajectoryModel):
 
         _, action_preds, return_preds = self.forward(
             states, actions, None, returns_to_go, action_masks, timesteps, attention_mask=attention_mask, **kwargs)
-        action = action_preds[0, -1].max(0, keepdim=True)[1][0] # get index of max log-probability
+        last_action_pred_logits = action_preds[0, -1]
+        last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0)
+        action = torch.multinomial(last_action_pred_probs, num_samples=1, generator=None).squeeze()
         return action

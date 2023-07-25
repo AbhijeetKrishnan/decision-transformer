@@ -51,6 +51,10 @@ def evaluate_episode(
         
         state, reward, done, truncated, info = env.step(action)
 
+        if done or truncated:
+            env.render()
+            print(reward)
+
         cur_state = torch.from_numpy(state).to(device=device).reshape(1, state_dim)
         cur_action_mask = torch.from_numpy(info['action_mask']).reshape(1, act_dim).to(device=device, dtype=torch.bool)
         states = torch.cat([states, cur_state], dim=0)
@@ -123,7 +127,7 @@ def evaluate_episode_rtg(
 
         state, reward, done, truncated, info = env.step(action)
 
-        if done:
+        if done or truncated:
             env.render()
             print(reward)
 

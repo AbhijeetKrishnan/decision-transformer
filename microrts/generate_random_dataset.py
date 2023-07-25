@@ -69,7 +69,7 @@ def print_batch_stats(batch_idx, batch_returns, batch_program_length, batch_traj
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='microrts')
-    parser.add_argument('-n', '--num_episodes', type=int, default=10000)
+    parser.add_argument('-n', '--num_episodes', type=int, default=7000)
     parser.add_argument('-b', '--batch_size', type=int, default=65536, help='Number of transitions in a batch to write to file')
     parser.add_argument('-f', '--format', choices=['h5', 'pkl'], default='h5')
     parser.add_argument('--agent', choices=['random'], default='random')

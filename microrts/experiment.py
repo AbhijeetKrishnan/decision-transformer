@@ -335,7 +335,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_iters', type=int, default=10, help='Number of (train, eval) cycles to run')
     parser.add_argument('--num_steps_per_iter', type=int, default=10000, help='Number of (train, loss, backprop) steps to run per iteration')
     parser.add_argument('--device', type=str, default='cuda')
-    parser.add_argument('--log_to_wandb', '-w', type=bool, default=False)
+    parser.add_argument('--log_to_wandb', '-w', action=argparse.BooleanOptionalAction)
     parser.add_argument('--format', choices=['h5', 'pkl'], default='h5', help='Format in which input dataset is stored')
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     

@@ -1,12 +1,14 @@
 import argparse
+import os
 import pickle
 
 import grammar_synthesis
-from grammar_synthesis.policy import RandomSampler
 import gymnasium
 import numpy as np
 import tables as tb
+from grammar_synthesis.policy import RandomSampler
 from karel_reward import karel_reward
+from tqdm import tqdm
 
 
 def run_episode(env, agent, seed=None):
@@ -56,14 +58,14 @@ def get_batch_stats(batch):
     return batch_returns, batch_program_length, batch_traj_lens
 
 def print_batch_stats(batch_idx, batch_returns, batch_program_length, batch_traj_lens):
-    print('-' * 50)
-    print(f'Number of samples collected in batch {batch_idx + 1}: {np.sum(batch_traj_lens)}')
-    print(f'Trajectory returns in batch {batch_idx + 1}: mean = {np.mean(batch_returns):.2f}, std = {np.std(batch_returns):.2f}, max = {np.max(batch_returns):.2f}, min = {np.min(batch_returns):.2f}')
-    print(f'Number of complete programs in batch {batch_idx + 1}: {len(batch_program_length)}')
+    tqdm.write('-' * 50)
+    tqdm.write(f'Number of samples collected in batch {batch_idx + 1}: {np.sum(batch_traj_lens)}')
+    tqdm.write(f'Trajectory returns in batch {batch_idx + 1}: mean = {np.mean(batch_returns):.2f}, std = {np.std(batch_returns):.2f}, max = {np.max(batch_returns):.2f}, min = {np.min(batch_returns):.2f}')
+    tqdm.write(f'Number of complete programs in batch {batch_idx + 1}: {len(batch_program_length)}')
     if len(batch_program_length) > 0:
-        print(f'Complete program length in batch {batch_idx + 1}: mean = {np.mean(batch_program_length):.2f}, std = {np.std(batch_program_length):.2f}, max = {np.max(batch_program_length):.2f}, min = {np.min(batch_program_length):.2f}')
-    print(f'Episode lengths in batch {batch_idx + 1}: mean = {np.mean(batch_traj_lens):.2f}, std = {np.std(batch_traj_lens):.2f}, max = {np.max(batch_traj_lens):.2f}, min = {np.min(batch_traj_lens):.2f}')
-    print('-' * 50)
+        tqdm.write(f'Complete program length in batch {batch_idx + 1}: mean = {np.mean(batch_program_length):.2f}, std = {np.std(batch_program_length):.2f}, max = {np.max(batch_program_length):.2f}, min = {np.min(batch_program_length):.2f}')
+    tqdm.write(f'Episode lengths in batch {batch_idx + 1}: mean = {np.mean(batch_traj_lens):.2f}, std = {np.std(batch_traj_lens):.2f}, max = {np.max(batch_traj_lens):.2f}, min = {np.min(batch_traj_lens):.2f}')
+    tqdm.write('-' * 50)
 
 
 def main():
@@ -75,6 +77,7 @@ def main():
     parser.add_argument('--agent', choices=['random'], default='random')
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
+    parser.add_argument('--overwrite', type=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     batch_size = args.batch_size
@@ -113,6 +116,14 @@ def main():
         with open(grammar_file) as dsl_file: 
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr', mdp_config=karel_task_config)
 
+    # Delete file if already present
+    if args.overwrite and os.path.exists(datapath):
+        os.remove(datapath)
+        print(f'Deleting {datapath} before generation because it already exists')
+    elif not args.delete and os.path.exists(datapath):
+        print(f'File {datapath} already exists. Please rename it before generating a new dataset')
+        return
+
     if args.agent == 'random':
         agent = RandomSampler(env)
     
@@ -132,44 +143,45 @@ def main():
     episode_lens = [] # stores lengths of trajectories from previous completed episodes
     batch_idx = 0
 
-    for _ in range(args.num_episodes):
-        for obs, action, reward, terminated, truncated, action_mask in run_episode(env, agent, seed):
-            observations.append(obs)
-            actions.append(action)
-            rewards.append(reward)
-            terminals.append(terminated)
-            timeouts.append(truncated)
-            action_masks.append(action_mask)
+    with tqdm(range(args.num_episodes), desc="Generating", unit="episode") as progress_bar:
+        for _ in progress_bar:
+            for obs, action, reward, terminated, truncated, action_mask in run_episode(env, agent, seed):
+                observations.append(obs)
+                actions.append(action)
+                rewards.append(reward)
+                terminals.append(terminated)
+                timeouts.append(truncated)
+                action_masks.append(action_mask)
 
-            if len(observations) >= batch_size: # buffer is full
-                if len(episode_lens) > 0: # buffer contains at least one full episode that can be written
-                    # make episode-wise batches of all current data and write to file
-                    paths = create_batch(episode_lens, observations, actions, rewards, terminals, timeouts, action_masks)
+                if len(observations) >= batch_size: # buffer is full
+                    if len(episode_lens) > 0: # buffer contains at least one full episode that can be written
+                        # make episode-wise batches of all current data and write to file
+                        paths = create_batch(episode_lens, observations, actions, rewards, terminals, timeouts, action_masks)
 
-                    batch_returns, batch_program_length, batch_traj_lens = get_batch_stats(paths)
-                    
-                    returns += batch_returns
-                    program_length += batch_program_length
-                    traj_lens += batch_traj_lens
+                        batch_returns, batch_program_length, batch_traj_lens = get_batch_stats(paths)
+                        
+                        returns += batch_returns
+                        program_length += batch_program_length
+                        traj_lens += batch_traj_lens
 
-                    print_batch_stats(batch_idx, batch_returns, batch_program_length, batch_traj_lens)
+                        print_batch_stats(batch_idx, batch_returns, batch_program_length, batch_traj_lens)
 
-                    if args.format == 'h5':
-                        write_list_of_dicts_to_hdf5(datapath, paths, batch_idx)
-                    elif args.format == 'pkl':
-                        with open(datapath, 'ab') as f:
-                            pickle.dump(paths, f)
-                    print(f'Wrote trajectories in batch {batch_idx + 1} to {datapath}')
+                        if args.format == 'h5':
+                            write_list_of_dicts_to_hdf5(datapath, paths, batch_idx)
+                        elif args.format == 'pkl':
+                            with open(datapath, 'ab') as f:
+                                pickle.dump(paths, f)
+                        tqdm.write(f'Wrote trajectories in batch {batch_idx + 1} to {datapath}')
 
-                    batch_idx += 1
-                    episode_lens = []
-                else:
-                    # full buffer does not contain a complete episode that can be written to file -> double buffer size
-                    batch_size *= 2
-                    print(f'Increased buffer size to {batch_size}')
+                        batch_idx += 1
+                        episode_lens = []
+                    else:
+                        # full buffer does not contain a complete episode that can be written to file -> double buffer size
+                        batch_size *= 2
+                        tqdm.write(f'Increased buffer size to {batch_size}')
 
-        prev_episode_length = len(observations) - sum(episode_lens)
-        episode_lens.append(prev_episode_length)
+            prev_episode_length = len(observations) - sum(episode_lens)
+            episode_lens.append(prev_episode_length)
 
     # Write final batch, if necessary
     paths = create_batch(episode_lens, observations, actions, rewards, terminals, timeouts, action_masks)
@@ -188,19 +200,19 @@ def main():
         elif args.format == 'pkl':
             with open(datapath, 'ab') as f:
                 pickle.dump(paths, f)
-        print(f'Wrote trajectories in batch {batch_idx + 1} to {datapath}')
+        tqdm.write(f'Wrote trajectories in batch {batch_idx + 1} to {datapath}')
     elif len(paths) == 0 and len(observations) > 0:
-        print(f'Buffer still contains {len(observations)} transitions!')
+        tqdm.write(f'Buffer still contains {len(observations)} transitions!')
 
     # Print total summary statistics
-    print('=' * 50)
-    print(f'Total number of samples collected: {np.sum(traj_lens)}')
-    print(f'Total trajectory returns: mean = {np.mean(returns):.2f}, std = {np.std(returns):.2f}, max = {np.max(returns):.2f}, min = {np.min(returns):.2f}')
-    print(f'Total number of complete programs: {len(program_length)}')
+    tqdm.write('=' * 50)
+    tqdm.write(f'Total number of samples collected: {np.sum(traj_lens)}')
+    tqdm.write(f'Total trajectory returns: mean = {np.mean(returns):.2f}, std = {np.std(returns):.2f}, max = {np.max(returns):.2f}, min = {np.min(returns):.2f}')
+    tqdm.write(f'Total number of complete programs: {len(program_length)}')
     if len(program_length) > 0:
-        print(f'Total complete program length: mean = {np.mean(program_length):.2f}, std = {np.std(program_length):.2f}, max = {np.max(program_length):.2f}, min = {np.min(program_length):.2f}')
-    print(f'Total episode lengths: mean = {np.mean(traj_lens):.2f}, std = {np.std(traj_lens):.2f}, max = {np.max(traj_lens):.2f}, min = {np.min(traj_lens):.2f}')
-
+        tqdm.write(f'Total complete program length: mean = {np.mean(program_length):.2f}, std = {np.std(program_length):.2f}, max = {np.max(program_length):.2f}, min = {np.min(program_length):.2f}')
+    tqdm.write(f'Total episode lengths: mean = {np.mean(traj_lens):.2f}, std = {np.std(traj_lens):.2f}, max = {np.max(traj_lens):.2f}, min = {np.min(traj_lens):.2f}')
+    tqdm.write(f"File size (GB): {os.path.getsize(datapath) / (1024 ** 3):.2f}")
 
 if __name__ == '__main__':
     main()

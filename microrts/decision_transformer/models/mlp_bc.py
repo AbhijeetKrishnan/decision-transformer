@@ -55,5 +55,6 @@ class MLPBCModel(TrajectoryModel):
                              dtype=torch.float32, device=states.device), states], dim=1)
         states = states.to(dtype=torch.float32)
         _, actions, _ = self.forward(states, None, None, action_masks, **kwargs)
-        action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max log-probability
+        action = torch.multinomial(actions[0, -1], num_samples=1, generator=None).squeeze() # sampling from action probs
+        # action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max probability
         return action

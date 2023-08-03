@@ -127,7 +127,7 @@ def evaluate_episode_rtg(
 
         state, reward, done, truncated, info = env.step(action)
 
-        if done or truncated:
+        if done:
             env.render()
             print(reward)
 

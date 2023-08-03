@@ -98,8 +98,9 @@ class DecisionTransformer(TrajectoryModel):
         return_preds = self.predict_return(x[:,2])  # predict next return given state and action
         state_preds = self.predict_state(x[:,2])    # predict next state given state and action
         action_preds = self.predict_action(x[:,1])  # predict next action given state
-        latest_action_masks = action_masks[:, -1, :].unsqueeze(1) # use latest state's action mask
-        masked_action_categoricals = [CategoricalMasked(logits=action, mask=latest_action_mask).probs for (action, latest_action_mask) in zip(action_preds, latest_action_masks)]
+
+        last_action_masks = action_masks[:, -1, :].unsqueeze(1) # use the action mask of the last state in the context
+        masked_action_categoricals = [CategoricalMasked(logits=action, mask=last_action_mask).probs for (action, last_action_mask) in zip(action_preds, last_action_masks)]
         masked_action_categoricals = torch.stack(masked_action_categoricals)
 
         return state_preds, masked_action_categoricals, return_preds
@@ -141,7 +142,13 @@ class DecisionTransformer(TrajectoryModel):
 
         _, action_preds, return_preds = self.forward(
             states, actions, None, returns_to_go, action_masks, timesteps, attention_mask=attention_mask, **kwargs)
-        last_action_pred_logits = action_preds[0, -1]
-        last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0)
-        action = torch.multinomial(last_action_pred_probs, num_samples=1, generator=None).squeeze()
+        
+        # Calculate action by sampling from log probs
+        # last_action_pred_logits = action_preds[0, -1]
+        # last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0)
+        action = torch.multinomial(action_preds[0, -1], num_samples=1, generator=None).squeeze()
+
+        # Calculate action using max log prob
+        # action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max probability
+
         return action

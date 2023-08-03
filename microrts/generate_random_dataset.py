@@ -77,7 +77,7 @@ def main():
     parser.add_argument('--agent', choices=['random'], default='random')
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
-    parser.add_argument('--overwrite', type=argparse.BooleanOptionalAction)
+    parser.add_argument('--overwrite', action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     batch_size = args.batch_size
@@ -114,13 +114,14 @@ def main():
             karel_task_config = config
         
         with open(grammar_file) as dsl_file: 
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr', mdp_config=karel_task_config)
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
+                                 reward_fn=karel_reward, truncation_reward=0.0, parser='lalr', mdp_config=karel_task_config)
 
     # Delete file if already present
     if args.overwrite and os.path.exists(datapath):
         os.remove(datapath)
         print(f'Deleting {datapath} before generation because it already exists')
-    elif not args.delete and os.path.exists(datapath):
+    elif not args.overwrite and os.path.exists(datapath):
         print(f'File {datapath} already exists. Please rename it before generating a new dataset')
         return
 

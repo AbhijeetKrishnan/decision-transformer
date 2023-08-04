@@ -81,7 +81,8 @@ def experiment(
             karel_task_config = config
 
         with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=karel_reward, parser='lalr', mdp_config=karel_task_config)
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
+                                 reward_fn=karel_reward, max_len=50, parser='lalr', mdp_config=karel_task_config)
         max_ep_len = env.max_len
         env_targets = [1.0, 0.75, 0.5]
         scale = 1.

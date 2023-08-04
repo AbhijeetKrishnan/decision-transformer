@@ -22,5 +22,5 @@ def karel_reward(program_text, mdp_config=None):
     config.execution_guided = config.rl.policy.execution_guided
     
     karel_env = ExecEnv2(config)
-    reward, pred_program = karel_env.reward(program)
+    reward, pred_program = karel_env.reward(program, is_program_str=True)
     return reward

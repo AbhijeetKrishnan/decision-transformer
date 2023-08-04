@@ -96,7 +96,7 @@ def evaluate_episode_rtg(
 
     # we keep all the histories on the device
     # note that the latest action and reward will be "padding"
-    states = torch.from_numpy(state).reshape(1, state_dim).to(device=device, dtype=torch.float32)
+    states = torch.from_numpy(state).reshape(1, state_dim).to(device=device, dtype=torch.long)
     actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
     rewards = torch.zeros(0, device=device, dtype=torch.float32)
     action_masks = torch.from_numpy(info['action_mask']).reshape(1, act_dim).to(device=device, dtype=torch.bool)
@@ -115,7 +115,7 @@ def evaluate_episode_rtg(
         rewards = torch.cat([rewards, torch.zeros(1, device=device)])
 
         action = model.get_action(
-            (states.to(dtype=torch.float32)), # - state_mean) / state_std,
+            (states.to(dtype=torch.long)), # - state_mean) / state_std,
             actions.to(dtype=torch.float32),
             rewards.to(dtype=torch.float32),
             target_return.to(dtype=torch.float32),

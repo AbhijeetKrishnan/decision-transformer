@@ -68,7 +68,7 @@ def experiment(
 
         with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
-                                 reward_fn=karel_reward, max_len=50, parser='lalr', mdp_config=karel_task_config)
+                                 reward_fn=karel_reward, max_len=50, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
         env_targets = [1.0, 0.75, 0.5]
         scale = 1.
@@ -80,6 +80,7 @@ def experiment(
 
     state_dim = env.observation_space.shape[0]
     act_dim = env.action_space.n # for discrete environments, assuming all actions are mapped to integers in a Discrete space
+    vocab_size = env.vocabulary_size
 
     # load dataset
     if file_format == 'h5':
@@ -173,7 +174,7 @@ def experiment(
             timesteps[-1] = np.concatenate([np.zeros((1, max_len - tlen)), timesteps[-1]], axis=1)
             mask.append(np.concatenate([np.zeros((1, max_len - tlen), dtype=np.bool_), np.ones((1, tlen), dtype=np.bool_)], axis=1))
 
-        s = torch.from_numpy(np.concatenate(s, axis=0)).to(dtype=torch.float32, device=device)
+        s = torch.from_numpy(np.concatenate(s, axis=0)).to(dtype=torch.long, device=device)
         a = torch.from_numpy(np.concatenate(a, axis=0)).to(dtype=torch.float32, device=device)
         r = torch.from_numpy(np.concatenate(r, axis=0)).to(dtype=torch.float32, device=device)
         d = torch.from_numpy(np.concatenate(d, axis=0)).to(dtype=torch.long, device=device)
@@ -233,6 +234,7 @@ def experiment(
             max_length=K,
             max_ep_len=max_ep_len,
             hidden_size=variant['embed_dim'],
+            vocab_size=vocab_size,
             n_layer=variant['n_layer'],
             n_head=variant['n_head'],
             n_inner=4*variant['embed_dim'],

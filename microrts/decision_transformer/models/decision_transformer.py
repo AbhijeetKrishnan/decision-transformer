@@ -9,6 +9,21 @@ from decision_transformer.models.trajectory_gpt2 import GPT2Model
 from decision_transformer.models.CategoricalMasked import CategoricalMasked
 
 
+class SequentialStateEmbedder(nn.Module):
+    def __init__(self, vocabulary_size, hidden_dim, padding_idx=0):
+        super().__init__()
+        self.embedding = nn.Embedding(vocabulary_size, vocabulary_size, padding_idx=padding_idx)
+        self.rnn = nn.GRU(vocabulary_size * 50, hidden_dim, batch_first=True) # TODO: handle state max seq length better
+        self.fc = nn.Linear(hidden_dim, hidden_dim)
+
+    def forward(self, x):
+        embedded = self.embedding(x)
+        embedded = embedded.view(embedded.shape[0], embedded.shape[1], -1)
+        # print(embedded.shape)
+        rnn_output, _ = self.rnn(embedded)
+        final_output = self.fc(rnn_output[-1])
+        return final_output
+
 class DecisionTransformer(TrajectoryModel):
 
     """
@@ -20,6 +35,7 @@ class DecisionTransformer(TrajectoryModel):
             state_dim,
             act_dim,
             hidden_size,
+            vocab_size,
             max_length=None,
             max_ep_len=4096,
             action_tanh=True,
@@ -38,9 +54,10 @@ class DecisionTransformer(TrajectoryModel):
         # is that the positional embeddings are removed (since we'll add those ourselves)
         self.transformer = GPT2Model(config)
 
+        # print(f'Vocab size: {vocab_size}')
         self.embed_timestep = nn.Embedding(max_ep_len, hidden_size)
         self.embed_return = torch.nn.Linear(1, hidden_size)
-        self.embed_state = torch.nn.Linear(self.state_dim, hidden_size)
+        self.embed_state = SequentialStateEmbedder(vocab_size, hidden_size)
         self.embed_action = torch.nn.Linear(self.act_dim, hidden_size)
 
         self.embed_ln = nn.LayerNorm(hidden_size)
@@ -65,6 +82,7 @@ class DecisionTransformer(TrajectoryModel):
         action_embeddings = self.embed_action(actions)
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
+        # print(state_embeddings.shape, action_embeddings.shape, time_embeddings.shape)
 
         # time embeddings are treated similar to positional embeddings
         state_embeddings = state_embeddings + time_embeddings
@@ -125,7 +143,7 @@ class DecisionTransformer(TrajectoryModel):
             attention_mask = attention_mask.to(dtype=torch.long, device=states.device).reshape(1, -1)
             states = torch.cat(
                 [torch.zeros((states.shape[0], self.max_length-states.shape[1], self.state_dim), device=states.device), states],
-                dim=1).to(dtype=torch.float32)
+                dim=1).to(dtype=torch.long)
             actions = torch.cat(
                 [torch.zeros((actions.shape[0], self.max_length - actions.shape[1], self.act_dim),
                              device=actions.device), actions],

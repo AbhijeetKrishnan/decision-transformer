@@ -2,6 +2,9 @@ import argparse
 import pickle
 import random
 from datetime import datetime
+import sys
+
+sys.path.insert(0, 'leaps') # hacky path manipulation to allow LEAPS code to be imported
 
 import grammar_synthesis
 import gymnasium
@@ -17,6 +20,7 @@ from decision_transformer.models.mlp_bc import MLPBCModel
 from decision_transformer.training.act_trainer import ActTrainer
 from decision_transformer.training.seq_trainer import SequenceTrainer
 from karel_reward import karel_reward
+from leaps.pretrain.get_karel_config import get_karel_task_config
 
 
 def discount_cumsum(x, gamma):
@@ -60,25 +64,7 @@ def experiment(
     elif env_name == 'karel':
         karel_task = variant['karel_task']
         dataset_path = f'data/{env_name}-{karel_task}-{dataset}.{file_format}'
-
-        if karel_task == 'cleanHouse':
-            from leaps.pretrain.leaps_cleanhouse import config
-            karel_task_config = config
-        elif karel_task == 'harvester':
-            from leaps.pretrain.leaps_harvester import config
-            karel_task_config = config
-        elif karel_task == 'fourCorners':
-            from leaps.pretrain.leaps_fourcorners import config
-            karel_task_config = config
-        elif karel_task == 'randomMaze':
-            from leaps.pretrain.leaps_maze import config
-            karel_task_config = config
-        elif karel_task == 'stairClimber':
-            from leaps.pretrain.leaps_stairclimber import config
-            karel_task_config = config
-        elif karel_task == 'topOff':
-            from leaps.pretrain.leaps_topoff import config
-            karel_task_config = config
+        karel_task_config = get_karel_task_config(karel_task)
 
         with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 

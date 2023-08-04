@@ -1,6 +1,9 @@
 import argparse
 import os
 import pickle
+import sys
+
+sys.path.insert(0, 'leaps') # hacky path manipulation to allow LEAPS code to be imported
 
 import grammar_synthesis
 import gymnasium
@@ -9,6 +12,7 @@ import tables as tb
 from grammar_synthesis.policy import RandomSampler
 from karel_reward import karel_reward
 from tqdm import tqdm
+from leaps.pretrain.get_karel_config import get_karel_task_config
 
 
 def run_episode(env, agent, seed=None):
@@ -93,25 +97,7 @@ def main():
         grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.lark'
         karel_task = args.karel_task
         datapath = f'data/{grammar}-{karel_task}-{args.agent}.{args.format}'
-        
-        if karel_task == 'cleanHouse':
-            from leaps.pretrain.leaps_cleanhouse import config
-            karel_task_config = config
-        elif karel_task == 'harvester':
-            from leaps.pretrain.leaps_harvester import config
-            karel_task_config = config
-        elif karel_task == 'fourCorners':
-            from leaps.pretrain.leaps_fourcorners import config
-            karel_task_config = config
-        elif karel_task == 'randomMaze':
-            from leaps.pretrain.leaps_maze import config
-            karel_task_config = config
-        elif karel_task == 'stairClimber':
-            from leaps.pretrain.leaps_stairclimber import config
-            karel_task_config = config
-        elif karel_task == 'topOff':
-            from leaps.pretrain.leaps_topoff import config
-            karel_task_config = config
+        karel_task_config = get_karel_task_config(karel_task)
         
         with open(grammar_file) as dsl_file: 
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program',

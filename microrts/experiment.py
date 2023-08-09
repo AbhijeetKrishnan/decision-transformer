@@ -53,14 +53,17 @@ def experiment(
     model_type = variant['model_type']
     group_name = f'{exp_prefix}-{env_name}-{variant["karel_task"]}-{dataset}'
     exp_prefix = f'{group_name}-{datetime.now().strftime("%Y%m%d_%H%M%S.%f")}'
+    env_targets = variant.get('env_targets', None)
+    if env_targets is not None:
+        env_targets = list(map(int, env_targets.split(',')))
+    scale = variant.get('scale', 1000.)
 
     if env_name == 'microrts':
         dataset_path = f'data/{env_name}-{dataset}.{file_format}'
         with open('decision_transformer/envs/assets/microrts-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', reward_fn=lambda program_text, _: len(program_text), parser='lalr')
         max_ep_len = env.max_len # max length of episode is max length of symbols in grammar synthesis MDP
-        env_targets = [1000, 500] # TODO: find out what these values should be
-        scale = 1000. # TODO: find out what these values should be
+        env_targets = env_targets if env_targets is not None else [1000, 500] # TODO: find out what these values should be
     elif env_name == 'karel':
         karel_task = variant['karel_task']
         dataset_path = f'data/{env_name}-{karel_task}-{dataset}.{file_format}'
@@ -70,8 +73,7 @@ def experiment(
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
                                  reward_fn=karel_reward, max_len=51, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
-        env_targets = [1.1, 0.5]
-        scale = 1.
+        env_targets = env_targets if env_targets is not None else [2200, 1100]
     else:
         raise NotImplementedError
 
@@ -151,7 +153,7 @@ def experiment(
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
-            a.append(np.eye(env.action_space.n)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim)) # TODO: does this work as expected?
+            a.append(np.eye(env.action_space.n)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim))
             r.append(traj['rewards'][si:si + max_len].reshape(1, -1, 1))
             if 'terminals' in traj:
                 d.append(traj['terminals'][si:si + max_len].reshape(1, -1))
@@ -314,6 +316,8 @@ if __name__ == '__main__':
     parser.add_argument('--env', type=str, default='microrts', help='Environment to use')
     parser.add_argument('--dataset', type=str, default='random', help='Dataset to use for training (identified by policy used for generation)') # random
     parser.add_argument('--mode', choices=['normal', 'delayed'], default='normal', help='"normal" for standard setting, "delayed" for moving rewards to end of trajectory')  # 'normal' for standard setting, 'delayed' for sparse
+    parser.add_argument('--env_targets', type=str, default='1000, 500', help='comma-separated list of target returns')
+    parser.add_argument('--scale', type=float, default=1000., help='Scale for rewards/returns')
     parser.add_argument('--K', type=int, default=20, help='Context length') # context length
     parser.add_argument('--pct_traj', type=float, default=1., help='Use top x% of trajectories (for %BC experiments)')
     parser.add_argument('--batch_size', type=int, default=64, help='Number of transitions to sample from a trajectory in a batch')

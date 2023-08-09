@@ -2,6 +2,11 @@ import numpy as np
 import torch
 
 
+def show_grads(model, tol=1e-2):
+    # Ref.: https://blog.briankitano.com/llama-from-scratch/
+    return sorted([(name, 100.0 * float(torch.sum(torch.abs(param) <= tol)) / float(param.nelement())) \
+                   for name, param in model.named_parameters() if param.requires_grad], key=lambda t: t[1], reverse=True)
+
 def evaluate_episode(
         env,
         state_dim,
@@ -14,7 +19,7 @@ def evaluate_episode(
         state_mean=0.,
         state_std=1.,
 ):
-
+    # for bc
     model.eval()
     model.to(device=device)
 
@@ -84,8 +89,11 @@ def evaluate_episode_rtg(
         mode='normal',
     ):
 
+    # for dt
     model.eval()
     model.to(device=device)
+
+    # print('\n'.join([str(param) for param in show_grads(model)]))
 
     state_mean = torch.from_numpy(state_mean).to(device=device)
     state_std = torch.from_numpy(state_std).to(device=device)
@@ -121,6 +129,7 @@ def evaluate_episode_rtg(
             target_return.to(dtype=torch.float32),
             action_masks.to(dtype=torch.bool),
             timesteps.to(dtype=torch.long),
+            visualize_logits=None,
         )
         actions[-1] = action
         action = action.detach().cpu().numpy()

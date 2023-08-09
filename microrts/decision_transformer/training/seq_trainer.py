@@ -29,6 +29,6 @@ class SequenceTrainer(Trainer):
         self.optimizer.step()
 
         with torch.no_grad():
-            self.diagnostics['training/action_error'] = torch.mean((action_preds-action_target)**2).detach().cpu().item()
+            self.diagnostics['training/action_error'] = torch.mean((torch.nn.functional.softmax(action_preds, dim=1)-action_target)**2).detach().cpu().item()
 
         return loss.detach().cpu().item()

@@ -70,7 +70,7 @@ def experiment(
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
                                  reward_fn=karel_reward, max_len=51, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
-        env_targets = [1.1, 0.5, 0.2]
+        env_targets = [1.1, 0.5]
         scale = 1.
     else:
         raise NotImplementedError
@@ -237,6 +237,7 @@ def experiment(
             max_ep_len=max_ep_len,
             hidden_size=variant['embed_dim'],
             vocab_size=vocab_size,
+            action_tanh=False,
             use_seq_state_embedding=use_seq_state_embedding,
             use_max_log_prob=use_max_log_prob,
             n_layer=variant['n_layer'],
@@ -279,7 +280,7 @@ def experiment(
             batch_size=batch_size,
             get_batch=get_batch,
             scheduler=scheduler,
-            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.CrossEntropyLoss()(a, a_hat),
+            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.KLDivLoss(reduction='batchmean')(a_hat, a),
             eval_fns=[eval_episodes(tar) for tar in env_targets],
         )
     elif model_type == 'bc':
@@ -289,7 +290,7 @@ def experiment(
             batch_size=batch_size,
             get_batch=get_batch,
             scheduler=scheduler,
-            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.CrossEntropyLoss()(a, a_hat),
+            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.KLDivLoss(reduction='batchmean')(a_hat, a),
             eval_fns=[eval_episodes(tar) for tar in env_targets],
         )
 

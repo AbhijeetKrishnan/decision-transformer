@@ -68,7 +68,7 @@ def experiment(
 
         with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
-                                 reward_fn=karel_reward, max_len=50, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
+                                 reward_fn=karel_reward, max_len=51, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
         env_targets = [1.1, 0.5, 0.2]
         scale = 1.

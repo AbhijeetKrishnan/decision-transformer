@@ -70,7 +70,7 @@ def experiment(
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
                                  reward_fn=karel_reward, max_len=50, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
-        env_targets = [1.0, 0.75, 0.5]
+        env_targets = [1.1, 0.5, 0.2]
         scale = 1.
     else:
         raise NotImplementedError
@@ -81,6 +81,8 @@ def experiment(
     state_dim = env.observation_space.shape[0]
     act_dim = env.action_space.n # for discrete environments, assuming all actions are mapped to integers in a Discrete space
     vocab_size = env.vocabulary_size
+    use_max_log_prob = variant.get('use_max_log_prob', False)
+    use_seq_state_embedding = variant.get('use_seq_state_embedding', False)
 
     # load dataset
     if file_format == 'h5':
@@ -235,6 +237,8 @@ def experiment(
             max_ep_len=max_ep_len,
             hidden_size=variant['embed_dim'],
             vocab_size=vocab_size,
+            use_seq_state_embedding=use_seq_state_embedding,
+            use_max_log_prob=use_max_log_prob,
             n_layer=variant['n_layer'],
             n_head=variant['n_head'],
             n_inner=4*variant['embed_dim'],
@@ -248,6 +252,7 @@ def experiment(
             state_dim=state_dim,
             act_dim=act_dim,
             max_length=K,
+            use_max_log_prob=use_max_log_prob,
             hidden_size=variant['embed_dim'],
             n_layer=variant['n_layer'],
         )
@@ -326,6 +331,8 @@ if __name__ == '__main__':
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--log_to_wandb', '-w', action=argparse.BooleanOptionalAction)
     parser.add_argument('--format', choices=['h5', 'pkl'], default='h5', help='Format in which input dataset is stored')
+    parser.add_argument('--use_max_log_prob', action=argparse.BooleanOptionalAction, default=False, help='Use max log prob instead of sampling from distribution')
+    parser.add_argument('--use_seq_state_embedding', action=argparse.BooleanOptionalAction, default=False, help='Use sequential state embedding instead of linear state embedding')
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     
     args = parser.parse_args()

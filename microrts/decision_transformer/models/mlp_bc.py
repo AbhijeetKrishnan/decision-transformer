@@ -12,14 +12,13 @@ class MLPBCModel(TrajectoryModel):
     Simple MLP that predicts next action a from past states s.
     """
 
-    def __init__(self, state_dim, act_dim, hidden_size, n_layer, dropout=0.1, max_length=1, **kwargs):
+    def __init__(self, state_dim, act_dim, hidden_size, n_layer, dropout=0.1, max_length=1, use_max_log_prob=False, **kwargs):
         super().__init__(state_dim, act_dim)
 
         self.hidden_size = hidden_size
         self.max_length = max_length
+        self.use_max_log_prob = use_max_log_prob
 
-        # TODO: replace initial layer with torch.nn.Embedding layer
-        # and simultaneously one-hot encode observation dimension (or keep indices, whatever the layer specifies)
         layers = [nn.Linear(max_length*self.state_dim, hidden_size)]
         for _ in range(n_layer-1):
             layers.extend([
@@ -55,6 +54,10 @@ class MLPBCModel(TrajectoryModel):
                              dtype=torch.float32, device=states.device), states], dim=1)
         states = states.to(dtype=torch.float32)
         _, actions, _ = self.forward(states, None, None, action_masks, **kwargs)
-        action = torch.multinomial(actions[0, -1], num_samples=1, generator=None).squeeze() # sampling from action probs
-        # action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max probability
+        if self.use_max_log_prob:
+            # Calculate action using max log prob
+            action = actions[0, -1].max(0, keepdim=True)[1][0]
+        else:
+            # Sample action from distribution
+            action = torch.multinomial(actions[0, -1], num_samples=1, generator=None).squeeze()
         return action

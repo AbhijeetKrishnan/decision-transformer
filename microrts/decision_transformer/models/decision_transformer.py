@@ -10,16 +10,15 @@ from decision_transformer.models.CategoricalMasked import CategoricalMasked
 
 
 class SequentialStateEmbedder(nn.Module):
-    def __init__(self, vocabulary_size, hidden_dim, padding_idx=0):
+    def __init__(self, sequence_length, vocabulary_size, hidden_dim, padding_idx=0):
         super().__init__()
         self.embedding = nn.Embedding(vocabulary_size, vocabulary_size, padding_idx=padding_idx)
-        self.rnn = nn.GRU(vocabulary_size * 50, hidden_dim, batch_first=True) # TODO: handle state max seq length better
+        self.rnn = nn.GRU(vocabulary_size * sequence_length, hidden_dim, batch_first=True)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
 
     def forward(self, x):
         embedded = self.embedding(x)
         embedded = embedded.view(embedded.shape[0], embedded.shape[1], -1)
-        # print(embedded.shape)
         rnn_output, _ = self.rnn(embedded)
         final_output = self.fc(rnn_output[-1])
         return final_output
@@ -39,6 +38,8 @@ class DecisionTransformer(TrajectoryModel):
             max_length=None,
             max_ep_len=4096,
             action_tanh=True,
+            use_seq_state_embedding=False,
+            use_max_log_prob=False,
             **kwargs
     ):
         super().__init__(state_dim, act_dim, max_length=max_length)
@@ -54,10 +55,12 @@ class DecisionTransformer(TrajectoryModel):
         # is that the positional embeddings are removed (since we'll add those ourselves)
         self.transformer = GPT2Model(config)
 
-        # print(f'Vocab size: {vocab_size}')
         self.embed_timestep = nn.Embedding(max_ep_len, hidden_size)
         self.embed_return = torch.nn.Linear(1, hidden_size)
-        self.embed_state = SequentialStateEmbedder(vocab_size, hidden_size)
+        if use_seq_state_embedding:
+            self.embed_state = SequentialStateEmbedder(max_ep_len, vocab_size, hidden_size)
+        else:
+            self.embed_state = torch.nn.Linear(self.state_dim, hidden_size)
         self.embed_action = torch.nn.Linear(self.act_dim, hidden_size)
 
         self.embed_ln = nn.LayerNorm(hidden_size)
@@ -68,6 +71,8 @@ class DecisionTransformer(TrajectoryModel):
             *([nn.Linear(hidden_size, self.act_dim)] + ([nn.Tanh()] if action_tanh else []))
         )
         self.predict_return = torch.nn.Linear(hidden_size, 1)
+
+        self.use_max_log_prob = use_max_log_prob
 
     def forward(self, states, actions, rewards, returns_to_go, action_masks, timesteps, attention_mask=None):
 
@@ -82,7 +87,6 @@ class DecisionTransformer(TrajectoryModel):
         action_embeddings = self.embed_action(actions)
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)
-        # print(state_embeddings.shape, action_embeddings.shape, time_embeddings.shape)
 
         # time embeddings are treated similar to positional embeddings
         state_embeddings = state_embeddings + time_embeddings
@@ -161,12 +165,11 @@ class DecisionTransformer(TrajectoryModel):
         _, action_preds, return_preds = self.forward(
             states, actions, None, returns_to_go, action_masks, timesteps, attention_mask=attention_mask, **kwargs)
         
-        # Calculate action by sampling from log probs
-        # last_action_pred_logits = action_preds[0, -1]
-        # last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0)
-        action = torch.multinomial(action_preds[0, -1], num_samples=1, generator=None).squeeze()
-
-        # Calculate action using max log prob
-        # action = actions[0, -1].max(0, keepdim=True)[1][0] # get index of max probability
+        if self.use_max_log_prob:
+            # Calculate action using max log prob
+            action = action_preds[0, -1].max(0, keepdim=True)[1][0]
+        else:
+            # Sample action from distribution
+            action = torch.multinomial(action_preds[0, -1], num_samples=1, generator=None).squeeze()
 
         return action

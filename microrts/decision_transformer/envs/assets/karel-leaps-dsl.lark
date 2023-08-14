@@ -4,16 +4,16 @@
 // https://proceedings.neurips.cc/paper/2021/hash/d37124c4c79f357cb02c655671a432fa-Abstract.html
 
 
-program: "DEF run m(" stmt "m)"
+program: "DEF" "run" "m(" stmt "m)"
 
 stmt: "REPEAT" cste "r(" stmt "r)" 
     | stmt stmt 
     | action 
-    | "IF c(" cond "c) i(" stmt "i)" 
-    | "IFELSE c(" cond "c) i(" stmt "i) ELSE e(" stmt "e)"
-    | "WHILE c(" cond "c) w(" stmt "w)" 
+    | "IF" "c(" cond "c)" "i(" stmt "i)" 
+    | "IFELSE" "c(" cond "c)" "i(" stmt "i)" "ELSE" "e(" stmt "e)"
+    | "WHILE" "c(" cond "c)" "w(" stmt "w)" 
 
-cond: "not c(" cond_without_not "c)" | cond_without_not
+cond: "not" "c(" cond_without_not "c)" | cond_without_not
 
 cond_without_not: "frontIsClear"
     | "leftIsClear"

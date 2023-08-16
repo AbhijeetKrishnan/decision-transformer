@@ -13,21 +13,10 @@ pip install -r requirements.txt
 conda activate decision-transformer-karel
 ```
 
-## Generating datasets
+## Running experiments
 
-Datasets are stored in the `data` directory.
-Run the following script in order to generate the datasets and save them in our format:
+Generation of datasets and training with hyperparameters reported in the paper can be done with the command:
 
+```bash
+./run_exps.sh
 ```
-python generate_random_dataset.py -g microrts -n 100
-```
-
-## Example usage
-
-Experiments can be reproduced with the following:
-
-```
-python experiment.py --env microrts --dataset random --model_type dt
-```
-
-Adding `-w True` will log results to Weights and Biases.

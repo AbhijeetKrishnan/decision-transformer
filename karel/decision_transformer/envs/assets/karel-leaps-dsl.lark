@@ -1,0 +1,34 @@
+//// EBNF grammar for the Karel DSL
+// Reference: Trivedi, D., Zhang, J., Sun, S.-H., & Lim, J. J. (2021). Learning to Synthesize Programs as 
+// Interpretable and Generalizable Policies. Advances in Neural Information Processing Systems, 34, 25146–25163. 
+// https://proceedings.neurips.cc/paper/2021/hash/d37124c4c79f357cb02c655671a432fa-Abstract.html
+
+
+program: "DEF" "run" "m(" stmt "m)"
+
+stmt: "REPEAT" cste "r(" stmt "r)" 
+    | stmt stmt 
+    | action 
+    | "IF" "c(" cond "c)" "i(" stmt "i)" 
+    | "IFELSE" "c(" cond "c)" "i(" stmt "i)" "ELSE" "e(" stmt "e)"
+    | "WHILE" "c(" cond "c)" "w(" stmt "w)" 
+
+cond: "not" "c(" cond_without_not "c)" | cond_without_not
+
+cond_without_not: "frontIsClear"
+    | "leftIsClear"
+    | "rightIsClear"
+    | "markersPresent"
+    | "noMarkersPresent"
+
+action: "move"
+    | "turnRight"
+    | "turnLeft"
+    | "pickMarker"
+    | "putMarker"
+
+cste: "R=0" | "R=1" | "R=2" | "R=3" | "R=4" | "R=5" | "R=6" | "R=7" | "R=8" | "R=9"
+    | "R=10" | "R=11" | "R=12" | "R=13" | "R=14" | "R=15" | "R=16" | "R=17" | "R=18" | "R=19"
+
+%import common.WS
+%ignore WS

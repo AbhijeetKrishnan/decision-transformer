@@ -56,6 +56,10 @@ def evaluate_episode(
         
         state, reward, done, truncated, info = env.step(action)
 
+        if not info['is_valid']:
+            import code
+            code.interact(local=locals())
+
         if done or truncated:
             env.render()
             print(reward)

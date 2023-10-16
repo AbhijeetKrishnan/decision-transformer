@@ -31,7 +31,6 @@ def write_list_of_dicts_to_hdf5(filename, data_list, base_idx: int=0):
         for idx, data_dict in enumerate(data_list):
             group = f.create_group('/', f'dict_{base_idx}_{idx}')
             for key, value in data_dict.items():
-                print(group, key, value)
                 f.create_array(group, key, value)
 
 def create_batch(episode_lens, observations, actions, rewards, terminals, timeouts, action_masks):

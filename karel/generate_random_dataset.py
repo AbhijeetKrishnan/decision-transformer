@@ -18,7 +18,8 @@ from leaps.pretrain.get_karel_config import get_karel_task_config
 def run_episode(env, agent, seed=None):
     "Run an episode with an agent policy and yield the timestep"
 
-    obs, info, terminated, truncated = *env.reset(seed=seed), False, False
+    env.action_space.seed(seed)
+    obs, info, terminated, truncated = *env.reset(), False, False
     while not terminated and not truncated:
         mask = info['action_mask']
         action = agent.get_action(obs, mask)
@@ -30,6 +31,7 @@ def write_list_of_dicts_to_hdf5(filename, data_list, base_idx: int=0):
         for idx, data_dict in enumerate(data_list):
             group = f.create_group('/', f'dict_{base_idx}_{idx}')
             for key, value in data_dict.items():
+                print(group, key, value)
                 f.create_array(group, key, value)
 
 def create_batch(episode_lens, observations, actions, rewards, terminals, timeouts, action_masks):

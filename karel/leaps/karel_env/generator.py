@@ -6,7 +6,6 @@ import h5py
 import os
 import argparse
 import progressbar
-import random
 import pickle
 
 import numpy as np
@@ -20,7 +19,7 @@ import karel
 
 class KarelStateGenerator(object):
     def __init__(self, seed=None):
-        self.rng = np.random.RandomState(seed)
+        self.rng = np.random.default_rng(seed)
 
     def print_state(self, state=None):
         agent_direction = {0: 'N', 1: 'E', 2: 'S', 3: 'W'}
@@ -47,11 +46,11 @@ class KarelStateGenerator(object):
         # Karel initial location
         valid_loc = False
         while(not valid_loc):
-            y = self.rng.randint(0, h)
-            x = self.rng.randint(0, w)
+            y = self.rng.integers(0, h)
+            x = self.rng.integers(0, w)
             if not s[y, x, 4]:
                 valid_loc = True
-                s[y, x, self.rng.randint(0, 4)] = True
+                s[y, x, self.rng.integers(0, 4)] = True
         # Marker: num of max marker == 1 for now
         s[:, :, 6] = (self.rng.rand(h, w) > 0.9) * (s[:, :, 4] == False) > 0
         s[:, :, 5] = 1 - (np.sum(s[:, :, 6:], axis=-1) > 0) > 0
@@ -124,7 +123,7 @@ class KarelStateGenerator(object):
 
         # place 10 Markers
         expected_marker_positions = list(expected_marker_positions)
-        random.shuffle(expected_marker_positions)
+        self.rng.shuffle(expected_marker_positions)
         assert len(expected_marker_positions) >= 10
         marker_positions = []
         for i, mpos in enumerate(expected_marker_positions):
@@ -174,7 +173,7 @@ class KarelStateGenerator(object):
             s[1:h-1, 1:w-1, 6] = True
         else:
             valid_marker_pos = np.array([(r,c) for r in range(1,h-1) for c in range(1,w-1)])
-            marker_pos = valid_marker_pos[np.random.choice(len(valid_marker_pos), size=int(marker_prob*len(valid_marker_pos)), replace=False)]
+            marker_pos = valid_marker_pos[self.rng.choice(len(valid_marker_pos), size=int(marker_prob*len(valid_marker_pos)), replace=False)]
             for pos in marker_pos:
                 s[pos[0], pos[1], 6] = True
 
@@ -224,7 +223,7 @@ class KarelStateGenerator(object):
         while len(stack) > 0:
             cur_pos = stack.pop()
             neighbor_list = get_neighbors(cur_pos, h, w)
-            random.shuffle(neighbor_list)
+            self.rng.shuffle(neighbor_list)
             for neighbor in neighbor_list:
                 if not visited[neighbor[0], neighbor[1]]:
                     stack.append(cur_pos)
@@ -240,8 +239,8 @@ class KarelStateGenerator(object):
         # Marker location
         valid_loc = False
         while (not valid_loc):
-           ym = self.rng.randint(0, h)
-           xm = self.rng.randint(0, w)
+           ym = self.rng.integers(0, h)
+           xm = self.rng.integers(0, w)
            if not s[ym, xm, 4]:
                valid_loc = True
                s[ym, xm, 6] = True
@@ -310,7 +309,7 @@ class KarelStateGenerator(object):
         s[agent_pos[0], agent_pos[1], 1] = True
 
         # randomly put markers at row h-2
-        s[h-2, 1:w-1, 6] = self.rng.rand(w-2) > 1 - wall_prob
+        s[h-2, 1:w-1, 6] = self.rng.random(w-2) > 1 - wall_prob
         # NOTE: need marker in last position as the condition is to check till I reach end
         s[h-2, w-2, 6] = True if not is_top_off else False
         s[:, :, 5] = 1 - (np.sum(s[:, :, 6:], axis=-1) > 0) > 0
@@ -395,7 +394,7 @@ class KarelStateGenerator(object):
         # Karel initial location
         l1, l2 = 0, 0
         while l1 == l2:
-            l1, l2 = self.rng.randint(0, len(valid_init_pos)), self.rng.randint(0, len(valid_init_pos))
+            l1, l2 = self.rng.integers(0, len(valid_init_pos)), self.rng.integers(0, len(valid_init_pos))
         agent_idx, marker_idx = min(l1, l2), max(l1, l2)
         agent_pos, marker_pos = valid_init_pos[agent_idx], valid_init_pos[marker_idx]
         assert (not s[agent_pos[0], agent_pos[1], 4]) and not (s[marker_pos[0], marker_pos[1], 4])

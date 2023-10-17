@@ -444,7 +444,6 @@ class ExecEnv2(ExecEnv):
         else:
             raise NotImplementedError('yet to implement')
         self._world.set_new_state(self.init_states[0][0])
-        #self._world.print_state()
 
     def execute_pred_program(self, program_seq, is_program_str=False):
         self._world.clear_history()

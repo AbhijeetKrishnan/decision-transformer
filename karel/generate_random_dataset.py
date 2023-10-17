@@ -18,7 +18,6 @@ from leaps.pretrain.get_karel_config import get_karel_task_config
 def run_episode(env, agent, seed=None):
     "Run an episode with an agent policy and yield the timestep"
 
-    env.action_space.seed(seed)
     obs, info, terminated, truncated = *env.reset(), False, False
     while not terminated and not truncated:
         mask = info['action_mask']
@@ -99,6 +98,7 @@ def main():
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program',
                                  reward_fn=karel_reward, max_len=51, truncation_reward=0.0, parser='lalr', 
                                  mdp_config=karel_task_config)
+        env.action_space.seed(seed)
 
     # Delete file if already present
     if args.overwrite and os.path.exists(datapath):

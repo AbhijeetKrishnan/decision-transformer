@@ -67,7 +67,7 @@ def experiment(
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
                                  reward_fn=karel_reward, max_len=51, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
-        env_targets = env_targets if env_targets is not None else [2200, 1100]
+        env_targets = env_targets if env_targets is not None else [2, 1]
     else:
         raise NotImplementedError
 
@@ -76,7 +76,7 @@ def experiment(
 
     state_dim = env.observation_space.shape[0]
     act_dim = env.action_space.n # for discrete environments, assuming all actions are mapped to integers in a Discrete space
-    vocab_size = env.vocabulary_size
+    vocab_size = env.observation_space.nvec[0]
     use_max_log_prob = variant.get('use_max_log_prob', False)
     use_seq_state_embedding = variant.get('use_seq_state_embedding', False)
 
@@ -147,7 +147,7 @@ def experiment(
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
-            a.append(np.eye(env.action_space.n)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim))
+            a.append(np.eye(act_dim)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim))
             r.append(traj['rewards'][si:si + max_len].reshape(1, -1, 1))
             if 'terminals' in traj:
                 d.append(traj['terminals'][si:si + max_len].reshape(1, -1))
@@ -159,11 +159,11 @@ def experiment(
             if rtg[-1].shape[1] <= s[-1].shape[1]:
                 rtg[-1] = np.concatenate([rtg[-1], np.zeros((1, 1, 1))], axis=1)
             action_masks.append(traj['action_masks'][si:si + max_len].reshape(1, -1, act_dim))
-
+            
             # padding and state + reward normalization
             tlen = s[-1].shape[1]
             s[-1] = np.concatenate([np.zeros((1, max_len - tlen, state_dim)), s[-1]], axis=1)
-            # s[-1] = (s[-1] - state_mean) / state_std
+            # s[-1] = (s[-1] - state_mean) / state_std # not needed since state is discrete
             a[-1] = np.concatenate([np.ones((1, max_len - tlen, act_dim)) * -10., a[-1]], axis=1)
             r[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)), r[-1]], axis=1)
             d[-1] = np.concatenate([np.ones((1, max_len - tlen)) * 2, d[-1]], axis=1)

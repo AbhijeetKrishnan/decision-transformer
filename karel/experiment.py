@@ -48,6 +48,7 @@ def experiment(
     device = variant.get('device', 'cuda')
     log_to_wandb = variant.get('log_to_wandb', False)
     file_format = variant.get('format', 'h5')
+    rng = np.random.default_rng(variant['seed'])
 
     env_name, dataset = variant['env'], variant['dataset']
     model_type = variant['model_type']
@@ -134,7 +135,7 @@ def experiment(
     p_sample = traj_lens[sorted_inds] / sum(traj_lens[sorted_inds])
 
     def get_batch(batch_size=256, max_len=K):
-        batch_inds = np.random.choice(
+        batch_inds = rng.choice(
             np.arange(num_trajectories),
             size=batch_size,
             replace=True,
@@ -144,7 +145,7 @@ def experiment(
         s, a, r, d, rtg, action_masks, timesteps, mask = [], [], [], [], [], [], [], []
         for i in range(batch_size):
             traj = trajectories[int(sorted_inds[batch_inds[i]])]
-            si = random.randint(0, traj['rewards'].shape[0] - 1)
+            si = rng.integers(0, traj['rewards'].shape[0] - 1)
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
@@ -334,6 +335,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_max_log_prob', action=argparse.BooleanOptionalAction, default=False, help='Use max log prob instead of sampling from distribution')
     parser.add_argument('--use_seq_state_embedding', action=argparse.BooleanOptionalAction, default=False, help='Use sequential state embedding instead of linear state embedding')
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
+    parser.add_argument('--seed', type=int, default=0, help='Random seed')
     
     args = parser.parse_args()
 

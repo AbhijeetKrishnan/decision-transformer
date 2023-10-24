@@ -8,8 +8,9 @@ sys.path.insert(0, 'leaps') # hacky path manipulation to allow LEAPS code to be 
 import grammar_synthesis
 import gymnasium
 import numpy as np
+import pandas as pd
 import tables as tb
-from grammar_synthesis.policy import RandomSampler
+from grammar_synthesis.policy import RandomSampler, ParsedPlayback
 from karel_reward import karel_reward
 from tqdm import tqdm
 from leaps.pretrain.get_karel_config import get_karel_task_config
@@ -23,6 +24,7 @@ def run_episode(env, agent, seed=None):
         mask = info['action_mask']
         action = agent.get_action(obs, mask)
         obs, reward, terminated, truncated, info = env.step(action)
+        action = env.encode_action(action)
         yield obs, action, reward, terminated, truncated, np.array(mask, dtype=np.bool_)
 
 def write_list_of_dicts_to_hdf5(filename, data_list, base_idx: int=0):
@@ -37,12 +39,12 @@ def create_batch(episode_lens, observations, actions, rewards, terminals, timeou
 
     for episode_len in episode_lens:
         episode = {
-            "observations": np.array(observations[:episode_len]),
-            "actions": np.array(actions[:episode_len]),
-            "rewards": np.array(rewards[:episode_len]),
-            "terminals": np.array(terminals[:episode_len]),
-            "timeouts": np.array(timeouts[:episode_len]),
-            "action_masks": np.array(action_masks[:episode_len]),
+            "observations": np.array(observations[:episode_len], dtype=np.uint),
+            "actions": np.array(actions[:episode_len], dtype=np.int_),
+            "rewards": np.array(rewards[:episode_len], dtype=np.float32),
+            "terminals": np.array(terminals[:episode_len], dtype=np.bool_),
+            "timeouts": np.array(timeouts[:episode_len], dtype=np.bool_),
+            "action_masks": np.array(action_masks[:episode_len], dtype=np.bool_),
         }
         batch.append(episode)
         
@@ -78,7 +80,7 @@ def main():
     parser.add_argument('-n', '--num_episodes', type=int, default=7000)
     parser.add_argument('-b', '--batch_size', type=int, default=65536, help='Number of transitions in a batch to write to file')
     parser.add_argument('-f', '--format', choices=['h5', 'pkl'], default='h5')
-    parser.add_argument('--agent', choices=['random'], default='random')
+    parser.add_argument('--agent', choices=['random', 'playback'], default='random')
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     parser.add_argument('--overwrite', action=argparse.BooleanOptionalAction)
@@ -110,6 +112,11 @@ def main():
 
     if args.agent == 'random':
         agent = RandomSampler(env)
+        num_iterations = args.num_episodes
+    elif args.agent == 'playback':
+        agent = ParsedPlayback(env)
+        leaps_data = pd.read_csv('leaps_data.csv')
+        num_iterations = len(leaps_data['programs'])
     
     # Generation statistics
     returns = []
@@ -127,8 +134,10 @@ def main():
     episode_lens = [] # stores lengths of trajectories from previous completed episodes
     batch_idx = 0
 
-    with tqdm(range(args.num_episodes), desc="Generating", unit="episode") as progress_bar:
-        for _ in progress_bar:
+    with tqdm(range(num_iterations), desc="Generating", unit="episode") as progress_bar:
+        for i in progress_bar:
+            if args.agent == 'playback':
+                agent.build_actions(leaps_data['programs'][i])
             for obs, action, reward, terminated, truncated, action_mask in run_episode(env, agent, seed):
                 observations.append(obs)
                 actions.append(action)

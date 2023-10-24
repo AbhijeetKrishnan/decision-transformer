@@ -63,9 +63,10 @@ def experiment(
         dataset_path = f'data/{env_name}-{karel_task}-{dataset}.{file_format}'
         karel_task_config = get_karel_task_config(karel_task)
 
-        with open('decision_transformer/envs/assets/karel-leaps-dsl.lark') as dsl_file:
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program', 
-                                 reward_fn=karel_reward, max_len=51, parser='lalr', mdp_config=karel_task_config) # TODO: handle state max seq len better
+        with open('decision_transformer/envs/assets/karel-leaps-dsl.pg') as dsl_file:
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
+                                 reward_fn=karel_reward, max_len=51, 
+                                 mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
         env_targets = env_targets if env_targets is not None else [2, 1]
     else:

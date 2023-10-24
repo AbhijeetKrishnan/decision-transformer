@@ -89,14 +89,14 @@ def main():
     seed = args.seed
 
     if grammar == 'karel':
-        grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.lark'
+        grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.pg'
         karel_task = args.karel_task
         datapath = f'data/{grammar}-{karel_task}-{args.agent}.{args.format}'
         karel_task_config = get_karel_task_config(karel_task)
         
         with open(grammar_file) as dsl_file: 
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(), start_symbol='program',
-                                 reward_fn=karel_reward, max_len=51, parser='lalr', 
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
+                                 reward_fn=karel_reward, max_len=51, 
                                  mdp_config=karel_task_config)
         env.action_space.seed(seed)
 

@@ -53,6 +53,7 @@ def evaluate_episode(
         )
         actions[-1] = action
         action = action.detach().cpu().numpy()
+        action = int(action)
         
         state, reward, done, truncated, info = env.step(action)
 
@@ -133,6 +134,7 @@ def evaluate_episode_rtg(
         )
         actions[-1] = action
         action = action.detach().cpu().numpy()
+        action = int(action)
 
         state, reward, done, truncated, info = env.step(action)
 

@@ -148,7 +148,7 @@ def experiment(
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
-            a.append(np.eye(act_dim)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim))
+            a.append(torch.nn.functional.one_hot(traj['actions'][si:si + max_len]).reshape(1, -1, act_dim))
             r.append(traj['rewards'][si:si + max_len].reshape(1, -1, 1))
             if 'terminals' in traj:
                 d.append(traj['terminals'][si:si + max_len].reshape(1, -1))
@@ -219,7 +219,8 @@ def experiment(
                 returns.append(ret)
                 lengths.append(length)
             return {
-                f'target_{target_rew}_return_mean': np.mean(returns),
+                f'target_{target_rew}_return_max': np.max(returns),
+                f'target_{target_rew}_return_min': np.mean(returns),
                 f'target_{target_rew}_return_std': np.std(returns),
                 f'target_{target_rew}_length_mean': np.mean(lengths),
                 f'target_{target_rew}_length_std': np.std(lengths),

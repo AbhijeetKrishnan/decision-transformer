@@ -51,7 +51,7 @@ def evaluate_episode(
             action_masks.to(dtype=torch.bool),
             target_return=target_return,
         )
-        actions[-1] = action
+        actions[-1] = torch.nn.functional.one_hot(action)
         action = action.detach().cpu().numpy()
         action = int(action)
         
@@ -132,7 +132,7 @@ def evaluate_episode_rtg(
             timesteps.to(dtype=torch.long),
             visualize_logits=None,
         )
-        actions[-1] = action
+        actions[-1] = torch.nn.functional.one_hot(action)
         action = action.detach().cpu().numpy()
         action = int(action)
 

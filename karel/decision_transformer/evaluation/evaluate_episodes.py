@@ -132,7 +132,7 @@ def evaluate_episode_rtg(
             timesteps.to(dtype=torch.long),
             visualize_logits=None,
         )
-        actions[-1] = torch.nn.functional.one_hot(action)
+        actions[-1] = torch.nn.functional.one_hot(action) # thank you Hamed Masoudi for this correction!
         action = action.detach().cpu().numpy()
         action = int(action)
 

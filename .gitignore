@@ -2,6 +2,7 @@ data/
 wandb/
 *.pkl
 *.h5
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

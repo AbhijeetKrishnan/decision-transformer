@@ -1,3 +1,5 @@
+"""Test script to run a program on a Karel environment."""
+
 import code
 import sys
 sys.path.insert(0, 'leaps') # hacky path manipulation to allow LEAPS code to be imported

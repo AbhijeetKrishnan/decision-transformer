@@ -173,6 +173,7 @@ class DecisionTransformer(TrajectoryModel):
             n_embd=hidden_size,
             **kwargs
         )
+        self.use_seq_state_embedding = use_seq_state_embedding
 
         # note: the only difference between this GPT2Model and the default Huggingface version
         # is that the positional embeddings are removed (since we'll add those ourselves)
@@ -206,7 +207,10 @@ class DecisionTransformer(TrajectoryModel):
             attention_mask = torch.ones((batch_size, seq_length), dtype=torch.long)
 
         # embed each modality with a different head
-        state_embeddings = self.embed_state(states)
+        if self.use_seq_state_embedding:
+            state_embeddings = self.embed_state(states)
+        else:
+            state_embeddings = self.embed_state(states.to(dtype=torch.float32)) # for compatibility with Linear layer
         action_embeddings = self.embed_action(actions)
         returns_embeddings = self.embed_return(returns_to_go)
         time_embeddings = self.embed_timestep(timesteps)

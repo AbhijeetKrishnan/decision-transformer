@@ -30,7 +30,7 @@ def evaluate_episode(
 
     # we keep all the histories on the device
     # note that the latest action and reward will be "padding"
-    states = torch.from_numpy(state).reshape(1, state_dim).to(device=device, dtype=torch.float32)
+    states = torch.from_numpy(state).reshape(1, state_dim).to(device=device, dtype=torch.long)
     actions = torch.zeros((0, act_dim), device=device, dtype=torch.float32)
     rewards = torch.zeros(0, device=device, dtype=torch.float32)
     target_return = torch.tensor(target_return, device=device, dtype=torch.float32)
@@ -45,7 +45,7 @@ def evaluate_episode(
         rewards = torch.cat([rewards, torch.zeros(1, device=device)])
 
         action = model.get_action(
-            (states.to(dtype=torch.float32)), # - state_mean) / state_std,
+            (states.to(dtype=torch.long)), # - state_mean) / state_std,
             actions.to(dtype=torch.float32),
             rewards.to(dtype=torch.float32),
             action_masks.to(dtype=torch.bool),
@@ -132,7 +132,8 @@ def evaluate_episode_rtg(
             timesteps.to(dtype=torch.long),
             visualize_logits=None,
         )
-        actions[-1] = torch.nn.functional.one_hot(action) # thank you Hamed Masoudi for this correction!
+
+        actions[-1] = torch.nn.functional.one_hot(action, act_dim) # thank you Hamed Masoudi for this correction!
         action = action.detach().cpu().numpy()
         action = int(action)
 

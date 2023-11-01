@@ -68,7 +68,7 @@ def experiment(
                                  reward_fn=karel_reward, max_len=51, 
                                  mdp_config=karel_task_config) # TODO: handle state max seq len better
         max_ep_len = env.max_len
-        env_targets = env_targets if env_targets is not None else [2, 1]
+        env_targets = env_targets if env_targets is not None else [1]
     else:
         raise NotImplementedError
 
@@ -148,7 +148,7 @@ def experiment(
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
-            a.append(torch.nn.functional.one_hot(traj['actions'][si:si + max_len]).reshape(1, -1, act_dim))
+            a.append(np.eye(act_dim)[traj['actions'][si:si + max_len]].reshape(1, -1, act_dim))
             r.append(traj['rewards'][si:si + max_len].reshape(1, -1, 1))
             if 'terminals' in traj:
                 d.append(traj['terminals'][si:si + max_len].reshape(1, -1))
@@ -309,11 +309,11 @@ def experiment(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, default='microrts', help='Environment to use')
-    parser.add_argument('--dataset', type=str, default='random', help='Dataset to use for training (identified by policy used for generation)') # random
-    parser.add_argument('--mode', choices=['normal', 'delayed'], default='normal', help='"normal" for standard setting, "delayed" for moving rewards to end of trajectory')  # 'normal' for standard setting, 'delayed' for sparse
-    parser.add_argument('--env_targets', type=str, default='1000, 500', help='comma-separated list of target returns')
-    parser.add_argument('--scale', type=float, default=1000., help='Scale for rewards/returns')
+    parser.add_argument('--env', type=str, default='karel', help='Environment to use')
+    parser.add_argument('--dataset', type=str, default='playback', help='Dataset to use for training (identified by policy used for generation)') # random
+    parser.add_argument('--mode', choices=['normal', 'delayed'], default='delayed', help='"normal" for standard setting, "delayed" for moving rewards to end of trajectory')  # 'normal' for standard setting, 'delayed' for sparse
+    parser.add_argument('--env_targets', type=str, default='1', help='comma-separated list of target returns')
+    parser.add_argument('--scale', type=float, default=1., help='Scale for rewards/returns')
     parser.add_argument('--K', type=int, default=20, help='Context length') # context length
     parser.add_argument('--pct_traj', type=float, default=1., help='Use top x% of trajectories (for %BC experiments)')
     parser.add_argument('--batch_size', type=int, default=64, help='Number of transitions to sample from a trajectory in a batch')
@@ -326,7 +326,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', '-lr', type=float, default=1e-4, help='Learning rate parameter for AdamW optimizer')
     parser.add_argument('--weight_decay', '-wd', type=float, default=1e-4, help='Weight decay parameter for AdamW optimizer')
     parser.add_argument('--warmup_steps', type=int, default=10000, help='Number of warmup steps for linear learning rate scheduling')
-    parser.add_argument('--num_eval_episodes', type=int, default=100, help='Number of rollouts to sample to evaluate obtained return')
+    parser.add_argument('--num_eval_episodes', type=int, default=64, help='Number of rollouts to sample to evaluate obtained return')
     parser.add_argument('--max_iters', type=int, default=10, help='Number of (train, eval) cycles to run')
     parser.add_argument('--num_steps_per_iter', type=int, default=10000, help='Number of (train, loss, backprop) steps to run per iteration')
     parser.add_argument('--device', type=str, default='cuda')

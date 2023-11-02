@@ -1,9 +1,0 @@
-name: decision-transformer-karel
-channels:
-- pytorch
-- conda-forge
-dependencies:
-- python>=3.11.3
-- anaconda
-- cudatoolkit=11.8
-- pip

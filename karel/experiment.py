@@ -67,7 +67,7 @@ def experiment(
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
                                  reward_fn=karel_reward, max_len=51, 
                                  mdp_config=karel_task_config) # TODO: handle state max seq len better
-        max_ep_len = env.max_len
+        max_ep_len = env.unwrapped.max_len
         env_targets = env_targets if env_targets is not None else [1]
     else:
         raise NotImplementedError

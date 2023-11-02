@@ -2,7 +2,7 @@
 
 NUM_EPISODES=2
 SEED=68997 # generated using https://www.random.org/
-STEPS=100
+STEPS=1
 DATASET="leaps"
 
 tasks=("cleanHouse" "harvester" "fourCorners" "randomMaze" "stairClimber" "topOff")
@@ -17,9 +17,9 @@ for task in "${tasks[@]}"; do
         python3 experiment.py --n_layer 3 --n_head 1 --embed_dim 128 --activation_function "relu" --batch_size 64 --K 20 \
             --env_targets "1" --dropout 0.1 -lr 1e-4 -wd 1e-4 \
             --warmup_steps "${STEPS}" --num_eval_episodes 64 \
-            --num_steps_per_iter "${STEPS}" --model_type dt --max_iters 10 --mode delayed --use_seq_state_embedding \
+            --num_steps_per_iter "${STEPS}" --model_type dt --max_iters 10 --mode delayed \
             --env karel --dataset random --karel_task "${task}" --scale 1.0 \
-            --log_to_wandb
+            # --log_to_wandb # --use_seq_state_embedding
 
     elif [ "${DATASET}" == "leaps" ]; then
         # Generate dataset (LEAPS)

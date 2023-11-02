@@ -300,12 +300,12 @@ class DecisionTransformer(TrajectoryModel):
         if visualize_logits is not None:
             # visualize action logits using matplotlib
             env = visualize_logits
-            rule_heads = [f'{env.sym_str(rule.origin)}->{" ".join([env.sym_str(symbol) for symbol in rule.expansion])}' for rule in env.parser.rules]
-            symbols = [env.sym_str(symbol) for symbol in env.symbols]
-            last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0).detach().cpu().numpy().reshape(env.num_rules, env.max_len)
+            rule_heads = [f'{rule.symbol.name}->{" ".join([symbol.name for symbol in rule.rhs])}' for rule in env.unwrapped.rules]
+            symbols = [symbol.name for symbol in env.unwrapped.symbols]
+            last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0).detach().cpu().numpy().reshape(env.unwrapped.num_rules, env.unwrapped.max_len)
 
             fig, ax = plt.subplots(1, 1)
-            im, cbar = heatmap(last_action_pred_probs[:, :len(env.symbols)], rule_heads, symbols, ax=ax,
+            im, cbar = heatmap(last_action_pred_probs[:, :len(env.unwrapped.symbols)], rule_heads, symbols, ax=ax,
                                cmap="magma", cbarlabel="probability", vmin=0.0, vmax=1.0, aspect="equal")
             texts = annotate_heatmap(im, valfmt=matplotlib.ticker.FuncFormatter(func), size=8, textcolors=("white", "black"), threshold=0.5)
 

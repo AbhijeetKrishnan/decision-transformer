@@ -23,8 +23,9 @@ def run_episode(env, agent, seed=None):
     while not terminated and not truncated:
         mask = info['action_mask']
         action = agent.get_action(obs, mask)
+        if type(action) == tuple:
+            action = env.unwrapped.encode_action(action)
         obs, reward, terminated, truncated, info = env.step(action)
-        action = env.encode_action(action)
         yield obs, action, reward, terminated, truncated, np.array(mask, dtype=np.bool_)
 
 def write_list_of_dicts_to_hdf5(filename, data_list, base_idx: int=0):

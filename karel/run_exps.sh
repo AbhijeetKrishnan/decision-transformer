@@ -5,7 +5,11 @@ STEPS=10000
 MAX_ITERS=10
 DATASET="leaps" # "random" or "leaps"
 
-tasks=("cleanHouse" "harvester" "fourCorners" "randomMaze" "stairClimber" "topOff")
+if [ $# -eq 0 ]; then
+    tasks=("cleanHouse" "harvester" "fourCorners" "randomMaze" "stairClimber" "topOff")
+else
+    tasks="$@"
+fi
 
 for task in "${tasks[@]}"; do
 

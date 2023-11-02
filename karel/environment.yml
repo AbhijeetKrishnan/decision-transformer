@@ -22,4 +22,4 @@ dependencies:
   - --extra-index-url https://download.pytorch.org/whl/cu118
   - torch >= 2.0.1
   - karel >= 1.3.0
-  - -e git+ssh://git@github.com/AbhijeetKrishnan/grammar-synthesis.git#egg=grammar_synthesis
+  - git+ssh://git@github.com/AbhijeetKrishnan/grammar-synthesis.git#egg=grammar_synthesis

@@ -130,7 +130,7 @@ def evaluate_episode_rtg(
             target_return.to(dtype=torch.float32),
             action_masks.to(dtype=torch.bool),
             timesteps.to(dtype=torch.long),
-            visualize_logits=env, # visualize_logits=env for visualizing logits
+            visualize_logits=None, # visualize_logits=env for visualizing logits
         )
 
         actions[-1] = torch.nn.functional.one_hot(action, act_dim) # thank you Hamed Masoudi for this correction!

@@ -94,6 +94,8 @@ def main():
     if grammar == 'karel':
         grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.pg'
         karel_task = args.karel_task
+        if not os.path.exists('data'):
+            os.makedirs('data')
         datapath = f'data/{grammar}-{karel_task}-{args.agent}.{args.format}'
         karel_task_config = get_karel_task_config(karel_task)
         

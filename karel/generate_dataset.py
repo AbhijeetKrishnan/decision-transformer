@@ -117,7 +117,7 @@ def main():
     elif args.agent == 'playback':
         agent = ParsedPlayback(env)
         leaps_data = pd.read_csv('leaps_data.csv')
-        num_iterations = len(leaps_data['programs'])
+        num_iterations = len(leaps_data['program'])
     
     # Generation statistics
     returns = []
@@ -138,7 +138,7 @@ def main():
     with tqdm(range(num_iterations), desc="Generating", unit="episode") as progress_bar:
         for i in progress_bar:
             if args.agent == 'playback':
-                agent.build_actions(leaps_data['programs'][i])
+                agent.build_actions(leaps_data['program'][i])
             for obs, action, reward, terminated, truncated, action_mask in run_episode(env, agent, seed):
                 observations.append(obs)
                 actions.append(action)

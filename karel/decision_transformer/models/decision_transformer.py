@@ -163,6 +163,7 @@ class DecisionTransformer(TrajectoryModel):
             action_tanh=True,
             use_seq_state_embedding=False,
             use_max_log_prob=False,
+            seed=0,
             **kwargs
     ):
         super().__init__(state_dim, act_dim, max_length=max_length)
@@ -318,6 +319,7 @@ class DecisionTransformer(TrajectoryModel):
         else:
             # Sample action from distribution
             last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0)
-            action = torch.multinomial(last_action_pred_probs, num_samples=1, generator=None).squeeze()
+            generator = torch.Generator(device='cuda').manual_seed(self.seed)
+            action = torch.multinomial(last_action_pred_probs, num_samples=1, generator=generator).squeeze()
 
         return action

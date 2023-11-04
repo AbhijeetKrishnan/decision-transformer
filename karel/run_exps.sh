@@ -1,7 +1,8 @@
 #!/bin/bash
 
 SEED=68997 # generated using https://www.random.org/
-STEPS=10000
+WARMUP_STEPS=1
+NUM_STEPS_PER_ITER=1
 MAX_ITERS=10
 DATASET="leaps" # "random" or "leaps"
 
@@ -22,9 +23,9 @@ for task in "${tasks[@]}"; do
         # Train model
         python3 experiment.py --n_layer 3 --n_head 1 --embed_dim 128 --activation_function "relu" --batch_size 64 --K 20 \
             --env_targets "1" --dropout 0.1 -lr 1e-4 -wd 1e-4 \
-            --warmup_steps "${STEPS}" --num_eval_episodes 64 \
-            --num_steps_per_iter "${STEPS}" --model_type dt --max_iters "${MAX_ITERS}" --mode delayed \
-            --env karel --dataset random --karel_task "${task}" --scale 1.0 \
+            --warmup_steps "${WARMUP_STEPS}" --num_eval_episodes 64 \
+            --num_steps_per_iter "${NUM_STEPS_PER_ITER}" --model_type dt --max_iters "${MAX_ITERS}" --mode delayed \
+            --env karel --dataset random --karel_task "${task}" --scale 1.0 --seed "${SEED}" \
             --log_to_wandb # --use_seq_state_embedding
 
     elif [ "${DATASET}" == "leaps" ]; then
@@ -34,9 +35,9 @@ for task in "${tasks[@]}"; do
         # Train model
         python3 experiment.py --n_layer 3 --n_head 1 --embed_dim 128 --activation_function "relu" --batch_size 64 --K 20 \
             --env_targets "1" --dropout 0.1 -lr 1e-4 -wd 1e-4 \
-            --warmup_steps "${STEPS}" --num_eval_episodes 64 \
-            --num_steps_per_iter "${STEPS}" --model_type dt --max_iters "${MAX_ITERS}" --mode delayed \
-            --env karel --dataset playback --karel_task "${task}" --scale 1.0 \
+            --warmup_steps "${WARMUP_STEPS}" --num_eval_episodes 64 \
+            --num_steps_per_iter "${NUM_STEPS_PER_ITER}" --model_type dt --max_iters "${MAX_ITERS}" --mode delayed \
+            --env karel --dataset playback --karel_task "${task}" --scale 1.0 --seed "${SEED}" \
             --log_to_wandb # --use_seq_state_embedding
     else
         echo "Invalid dataset: ${DATASET}"

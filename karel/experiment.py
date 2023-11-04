@@ -238,6 +238,7 @@ def experiment(
             action_tanh=False,
             use_seq_state_embedding=use_seq_state_embedding,
             use_max_log_prob=use_max_log_prob,
+            seed=variant['seed'],
             n_layer=variant['n_layer'],
             n_head=variant['n_head'],
             n_inner=4*variant['embed_dim'],

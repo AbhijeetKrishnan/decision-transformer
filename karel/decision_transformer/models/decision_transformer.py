@@ -181,21 +181,21 @@ class DecisionTransformer(TrajectoryModel):
         self.transformer = GPT2Model(config)
 
         self.embed_timestep = nn.Embedding(max_ep_len, hidden_size)
-        self.embed_return = torch.nn.Linear(1, hidden_size)
+        self.embed_return = nn.Linear(1, hidden_size)
         if use_seq_state_embedding:
-            self.embed_state = SequentialStateEmbedder(max_ep_len, vocab_size, hidden_size)
+            self.embed_state = SequentialStateEmbedder(state_dim, vocab_size, hidden_size)
         else:
-            self.embed_state = torch.nn.Linear(self.state_dim, hidden_size)
-        self.embed_action = torch.nn.Linear(self.act_dim, hidden_size)
+            self.embed_state = nn.Linear(self.state_dim, hidden_size)
+        self.embed_action = nn.Linear(self.act_dim, hidden_size)
 
         self.embed_ln = nn.LayerNorm(hidden_size)
 
         # note: we don't predict states or returns for the paper
-        self.predict_state = torch.nn.Linear(hidden_size, self.state_dim)
+        self.predict_state = nn.Linear(hidden_size, self.state_dim)
         self.predict_action = nn.Sequential(
             *([nn.Linear(hidden_size, self.act_dim)] + ([nn.Tanh()] if action_tanh else []))
         )
-        self.predict_return = torch.nn.Linear(hidden_size, 1)
+        self.predict_return = nn.Linear(hidden_size, 1)
 
         self.use_max_log_prob = use_max_log_prob
         self.generator = torch.Generator(device='cuda').manual_seed(seed)

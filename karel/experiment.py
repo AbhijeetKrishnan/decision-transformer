@@ -67,7 +67,6 @@ def experiment(
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
                                  reward_fn=karel_reward, max_len=51, 
                                  mdp_config=karel_task_config) # TODO: handle state max seq len better
-        max_ep_len = env.unwrapped.max_len
         env_targets = env_targets if env_targets is not None else [1]
     else:
         raise NotImplementedError
@@ -111,12 +110,14 @@ def experiment(
     print(f'{len(traj_lens)} trajectories, {num_timesteps} timesteps found')
     print(f'Average return: {np.mean(returns):.2f}, std: {np.std(returns):.2f}')
     print(f'Max return: {np.max(returns):.2f}, min: {np.min(returns):.2f}')
+    print(f'Max episode length: {np.max(traj_lens)}, min: {np.min(traj_lens)}')
     print('=' * 50)
 
     K = variant['K']
     batch_size = variant['batch_size']
     num_eval_episodes = variant['num_eval_episodes']
     pct_traj = variant.get('pct_traj', 1.)
+    max_ep_len = traj_lens.max()
 
     # only train on top pct_traj trajectories (for %BC experiment)
     num_timesteps = max(int(pct_traj*num_timesteps), 1)
@@ -131,14 +132,15 @@ def experiment(
     sorted_inds = sorted_inds[-num_trajectories:]
 
     # used to reweight sampling so we sample according to timesteps instead of trajectories
-    p_sample = traj_lens[sorted_inds] / sum(traj_lens[sorted_inds])
+    # p_sample = traj_lens[sorted_inds] / sum(traj_lens[sorted_inds])
+    p_sample = returns[sorted_inds] / sum(returns[sorted_inds])
 
     def get_batch(batch_size=256, max_len=K):
         batch_inds = rng.choice(
             np.arange(num_trajectories),
             size=batch_size,
             replace=True,
-            p=p_sample,  # reweights so we sample according to timesteps
+            p=p_sample,  # reweights so we sample according to returns
         )
 
         s, a, r, d, rtg, action_masks, timesteps, mask = [], [], [], [], [], [], [], []
@@ -315,7 +317,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', choices=['normal', 'delayed'], default='delayed', help='"normal" for standard setting, "delayed" for moving rewards to end of trajectory')  # 'normal' for standard setting, 'delayed' for sparse
     parser.add_argument('--env_targets', type=str, default='1', help='comma-separated list of target returns')
     parser.add_argument('--scale', type=float, default=1., help='Scale for rewards/returns')
-    parser.add_argument('--K', type=int, default=20, help='Context length') # context length
+    parser.add_argument('--K', type=int, default=30, help='Context length') # context length
     parser.add_argument('--pct_traj', type=float, default=1., help='Use top x% of trajectories (for %BC experiments)')
     parser.add_argument('--batch_size', type=int, default=64, help='Number of transitions to sample from a trajectory in a batch')
     parser.add_argument('--model_type', choices=['bc', 'dt'], default='dt', help='"dt" for decision transformer, "bc" for behavior cloning') # dt for decision transformer, bc for behavior cloning

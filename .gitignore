@@ -3,6 +3,8 @@ wandb/
 *.pkl
 *.h5
 .vscode/
+*.out
+*job*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

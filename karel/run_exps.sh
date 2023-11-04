@@ -1,13 +1,17 @@
 #!/bin/bash
 
+DATASET="playback" # "random" or "playback" (leaps)
 SEED=68997 # generated using https://www.random.org/
-PCT_TRAJ=0.4
+K=30 # max episode length in Karel LEAPS dataset
+LOG=false
+
+# Optimizable hyperparams
+PCT_TRAJ=0.1
 WARMUP_STEPS=1
 NUM_STEPS_PER_ITER=1
 BATCH_SIZE=64
-K=50
-MAX_ITERS=10
-DATASET="leaps" # "random" or "leaps"
+MAX_ITERS=1
+USE_SEQ_STATE_EMBD=true
 
 if [ $# -eq 0 ]; then
     tasks=("cleanHouse" "harvester" "fourCorners" "randomMaze" "stairClimber" "topOff")
@@ -15,33 +19,32 @@ else
     tasks="$@"
 fi
 
+if [ "${LOG}" = true ]; then
+    wandb_flag="--log_to_wandb"
+else
+    wandb_flag="--no-log_to_wandb"
+fi
+
+if [ "${USE_SEQ_STATE_EMBD}" = true ]; then
+    seq_state_flag="--use_seq_state_embedding"
+else
+    seq_state_flag="--no-use_seq_state_embedding"
+fi
+
 for task in "${tasks[@]}"; do
 
-    if [ "${DATASET}" == "random" ]; then
-        NUM_EPISODES=2
+    # Generate dataset
+    NUM_EPISODES=2
+    python3 generate_dataset.py -g karel -n "${NUM_EPISODES}" -b 65536 --seed "${SEED}" --agent "${DATASET}" --karel_task "${task}" # --overwrite
 
-        # Generate dataset (random)
-        python3 generate_dataset.py -g karel -n "${NUM_EPISODES}" -b 65536 --seed "${SEED}" --karel_task "${task}" --overwrite
-
-        # Train model
-        python3 experiment.py --n_layer 3 --n_head 1 --embed_dim 128 --activation_function "relu" --batch_size "${BATCH_SIZE}" --K "${K}" \
-            --env_targets "1" --dropout 0.1 -lr 1e-4 -wd 1e-4 --pct_traj "${PCT_TRAJ}" \
-            --warmup_steps "${WARMUP_STEPS}" --num_eval_episodes 64 \
-            --num_steps_per_iter "${NUM_STEPS_PER_ITER}" --model_type dt --max_iters "${MAX_ITERS}" --mode delayed \
-            --env karel --dataset random --karel_task "${task}" --scale 1.0 --seed "${SEED}" \
-            --log_to_wandb # --use_seq_state_embedding
-
-    elif [ "${DATASET}" == "leaps" ]; then
-        # Generate dataset (LEAPS)
-        python3 generate_dataset.py -g karel -b 65536 --seed "${SEED}" --agent playback --karel_task "${task}" # --overwrite
-
-        # Train model
-        python3 experiment.py --n_layer 3 --n_head 1 --embed_dim 128 --activation_function "relu" --batch_size "${BATCH_SIZE}" --K "${K}" \
-            --env_targets "1" --dropout 0.1 -lr 1e-4 -wd 1e-4 --pct_traj "${PCT_TRAJ}" \
-            --warmup_steps "${WARMUP_STEPS}" --num_eval_episodes 64 \
-            --num_steps_per_iter "${NUM_STEPS_PER_ITER}" --model_type dt --max_iters "${MAX_ITERS}" --mode delayed \
-            --env karel --dataset playback --karel_task "${task}" --scale 1.0 --seed "${SEED}" \
-            --log_to_wandb # --use_seq_state_embedding
+    # Train model
+    python3 experiment.py --dataset "${DATASET}" --env karel --karel_task "${task}" --scale 1.0 --mode delayed --model_type dt --num_eval_episodes 64 \
+        --n_layer 3 --n_head 1 --embed_dim 128 --activation_function "relu" \
+        --dropout 0.1 -lr 1e-4 -wd 1e-4 \
+        --batch_size "${BATCH_SIZE}" --K "${K}" --pct_traj "${PCT_TRAJ}" \
+        --env_targets "1"   \
+        --warmup_steps "${WARMUP_STEPS}" --num_steps_per_iter "${NUM_STEPS_PER_ITER}"  --max_iters "${MAX_ITERS}"  \
+        --seed "${SEED}" "${seq_state_flag}" "${wandb_flag}"
     else
         echo "Invalid dataset: ${DATASET}"
         exit 1

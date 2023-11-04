@@ -12,6 +12,7 @@ dependencies:
 - pytables
 - scipy
 - h5py
+- optuna
 - progressbar2
 - colorlog
 - pyparsing

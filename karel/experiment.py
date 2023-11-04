@@ -40,13 +40,41 @@ def read_list_of_dicts_from_hdf5(filename):
     return data_list
 
 
+def get_trajectories(variant):
+    file_format = variant.get('format', 'h5')
+    env_name, dataset = variant['env'], variant['dataset']
+
+    if env_name == 'karel':
+        karel_task = variant['karel_task']
+        dataset_path = f'data/{env_name}-{karel_task}-{dataset}.{file_format}'
+        karel_task_config = get_karel_task_config(karel_task)
+
+        with open('decision_transformer/envs/assets/karel-leaps-dsl.pg') as dsl_file:
+            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
+                                 reward_fn=karel_reward, max_len=51, 
+                                 mdp_config=karel_task_config) # TODO: handle state max seq len better
+        # env_targets = env_targets if env_targets is not None else [1]
+    else:
+        raise NotImplementedError
+    
+    # load dataset
+    if file_format == 'h5':
+        trajectories = read_list_of_dicts_from_hdf5(dataset_path)
+    elif file_format == 'pkl':
+        with open(dataset_path, 'rb') as f:
+            trajectories = pickle.load(f)
+
+    return env, trajectories
+
 def experiment(
         exp_prefix,
+        env,
+        trajectories,
         variant,
 ):
     device = variant.get('device', 'cuda')
     log_to_wandb = variant.get('log_to_wandb', False)
-    file_format = variant.get('format', 'h5')
+    
     rng = np.random.default_rng(variant['seed'])
 
     env_name, dataset = variant['env'], variant['dataset']
@@ -58,19 +86,6 @@ def experiment(
         env_targets = list(map(int, env_targets.split(',')))
     scale = variant.get('scale', 1000.)
 
-    if env_name == 'karel':
-        karel_task = variant['karel_task']
-        dataset_path = f'data/{env_name}-{karel_task}-{dataset}.{file_format}'
-        karel_task_config = get_karel_task_config(karel_task)
-
-        with open('decision_transformer/envs/assets/karel-leaps-dsl.pg') as dsl_file:
-            env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
-                                 reward_fn=karel_reward, max_len=51, 
-                                 mdp_config=karel_task_config) # TODO: handle state max seq len better
-        env_targets = env_targets if env_targets is not None else [1]
-    else:
-        raise NotImplementedError
-
     if model_type == 'bc':
         env_targets = env_targets[:1]  # since BC ignores target, no need for different evaluations
 
@@ -79,13 +94,6 @@ def experiment(
     vocab_size = env.observation_space.nvec[0]
     use_max_log_prob = variant.get('use_max_log_prob', False)
     use_seq_state_embedding = variant.get('use_seq_state_embedding', False)
-
-    # load dataset
-    if file_format == 'h5':
-        trajectories = read_list_of_dicts_from_hdf5(dataset_path)
-    elif file_format == 'pkl':
-        with open(dataset_path, 'rb') as f:
-            trajectories = pickle.load(f)
 
     # save all path information into separate lists
     mode = variant.get('mode', 'normal')
@@ -132,21 +140,27 @@ def experiment(
     sorted_inds = sorted_inds[-num_trajectories:]
 
     # used to reweight sampling so we sample according to timesteps instead of trajectories
-    # p_sample = traj_lens[sorted_inds] / sum(traj_lens[sorted_inds])
-    p_sample = returns[sorted_inds] / sum(returns[sorted_inds])
+    if variant['sample'] == 'length':
+        p_sample = traj_lens[sorted_inds] / sum(traj_lens[sorted_inds])
+    elif variant['sample'] == 'reward':
+        p_sample = returns[sorted_inds]
+        if np.all(p_sample):
+            p_sample = np.ones_like(p_sample) / len(p_sample)
+        else:
+            p_sample /= sum(returns[sorted_inds])
 
     def get_batch(batch_size=256, max_len=K):
         batch_inds = rng.choice(
             np.arange(num_trajectories),
             size=batch_size,
             replace=True,
-            p=p_sample,  # reweights so we sample according to returns
+            p=p_sample,  # reweights so we sample according to length/returns
         )
 
         s, a, r, d, rtg, action_masks, timesteps, mask = [], [], [], [], [], [], [], []
         for i in range(batch_size):
             traj = trajectories[int(sorted_inds[batch_inds[i]])]
-            si = 0 # rng.integers(0, traj['rewards'].shape[0] - 1)
+            si = 0 # rng.integers(0, traj['rewards'].shape[0] - 1) TODO: analyze if and why this is necessary
 
             # get sequences from dataset
             s.append(traj['observations'][si:si + max_len].reshape(1, -1, state_dim))
@@ -304,11 +318,15 @@ def experiment(
         )
         wandb.watch(model)
 
+    all_outputs = []
     for iter in range(variant['max_iters']):
         outputs = trainer.train_iteration(num_steps=variant['num_steps_per_iter'], iter_num=iter+1, print_logs=True)
+        all_outputs.append(outputs)
         if log_to_wandb:
             wandb.log(outputs)
-
+    objective = max([output['evaluation/target_1_return_max'] for output in all_outputs]) # max across all iterations
+    # objective = all_outputs[-1]['evaluation/target_1_return_max'] # last iteration TODO: which to choose and why?
+    return objective
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -339,7 +357,10 @@ if __name__ == '__main__':
     parser.add_argument('--use_seq_state_embedding', action=argparse.BooleanOptionalAction, default=False, help='Use sequential state embedding instead of linear state embedding')
     parser.add_argument('--karel_task', choices=['cleanHouse', 'harvester', 'fourCorners', 'randomMaze', 'stairClimber', 'topOff'], default='cleanHouse')
     parser.add_argument('--seed', type=int, default=0, help='Random seed')
+    parser.add_argument('--sample', choices=['length', 'reward'], default='reward', help='How to weight a trajectory when sampling from it')
     
     args = parser.parse_args()
+    variant = vars(args)
 
-    experiment('gym-experiment', variant=vars(args))
+    env, trajectories = get_trajectories(variant)
+    experiment('karel-experiment', env, trajectories, variant)

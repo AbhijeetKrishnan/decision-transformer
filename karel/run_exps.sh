@@ -42,11 +42,7 @@ for task in "${tasks[@]}"; do
         --n_layer 3 --n_head 1 --embed_dim 128 --activation_function "relu" \
         --dropout 0.1 -lr 1e-4 -wd 1e-4 \
         --batch_size "${BATCH_SIZE}" --K "${K}" --pct_traj "${PCT_TRAJ}" \
-        --env_targets "1"   \
-        --warmup_steps "${WARMUP_STEPS}" --num_steps_per_iter "${NUM_STEPS_PER_ITER}"  --max_iters "${MAX_ITERS}"  \
+        --env_targets "1" \
+        --warmup_steps "${WARMUP_STEPS}" --num_steps_per_iter "${NUM_STEPS_PER_ITER}"  --max_iters "${MAX_ITERS}" \
         --seed "${SEED}" "${seq_state_flag}" "${wandb_flag}"
-    else
-        echo "Invalid dataset: ${DATASET}"
-        exit 1
-    fi
 done

@@ -198,6 +198,7 @@ class DecisionTransformer(TrajectoryModel):
         self.predict_return = torch.nn.Linear(hidden_size, 1)
 
         self.use_max_log_prob = use_max_log_prob
+        self.generator = torch.Generator(device='cuda').manual_seed(seed)
 
     def forward(self, states, actions, rewards, returns_to_go, action_masks, timesteps, attention_mask=None):
 
@@ -319,7 +320,6 @@ class DecisionTransformer(TrajectoryModel):
         else:
             # Sample action from distribution
             last_action_pred_probs = torch.nn.functional.softmax(last_action_pred_logits, dim=0)
-            generator = torch.Generator(device='cuda').manual_seed(self.seed)
-            action = torch.multinomial(last_action_pred_probs, num_samples=1, generator=generator).squeeze()
+            action = torch.multinomial(last_action_pred_probs, num_samples=1, generator=self.generator).squeeze()
 
         return action

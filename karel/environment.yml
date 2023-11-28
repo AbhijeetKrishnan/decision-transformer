@@ -1,4 +1,4 @@
-name: decision-transformer-karel
+name: dt-karel
 channels:
 - defaults
 - conda-forge

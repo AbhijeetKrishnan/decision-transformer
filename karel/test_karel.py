@@ -1,6 +1,5 @@
 """Test script to run a program on a Karel environment."""
 
-import code
 import sys
 sys.path.insert(0, 'leaps') # hacky path manipulation to allow LEAPS code to be imported
 
@@ -10,12 +9,12 @@ from leaps.pretrain.get_karel_config import get_karel_task_config
 
 if __name__ == '__main__':
     
-    program_text = 'DEF run m( move move move WHILE c( noMarkersPresent c) w( move turnLeft w) m)'
-    mdp_config = get_karel_task_config('stairClimber')
+    program_text = 'DEF run m( WHILE c( noMarkersPresent c) w( turnRight move w) putMarker move WHILE c( noMarkersPresent c) w( turnRight move w) putMarker move WHILE c( noMarkersPresent c) w( turnRight move w) turnRight move putMarker m)'
+    mdp_config = get_karel_task_config('topOff')
 
     program = program_text.replace('\\', '').replace('\'', '')
     
-    karel_env = ExecEnv2(mdp_config)
+    karel_env = ExecEnv2(mdp_config['args'])
     reward, pred_program = karel_env.reward(program, is_program_str=True)
 
     states_0 = pred_program['s_h'][0]

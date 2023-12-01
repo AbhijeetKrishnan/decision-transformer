@@ -77,7 +77,7 @@ def print_batch_stats(batch_idx, batch_returns, batch_program_length, batch_traj
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='microrts')
+    parser.add_argument('-g', '--grammar', choices=['microrts', 'karel'], default='karel')
     parser.add_argument('-n', '--num_episodes', type=int, default=7000)
     parser.add_argument('-b', '--batch_size', type=int, default=65536, help='Number of transitions in a batch to write to file')
     parser.add_argument('-f', '--format', choices=['h5', 'pkl'], default='h5')
@@ -92,11 +92,11 @@ def main():
     seed = args.seed
 
     if grammar == 'karel':
-        grammar_file = 'decision_transformer/envs/assets/karel-leaps-dsl.pg'
+        grammar_file = os.path.join('decision_transformer', 'envs', 'assets', 'karel-leaps-dsl.pg')
         karel_task = args.karel_task
         if not os.path.exists('data'):
             os.makedirs('data')
-        datapath = f'data/{grammar}-{karel_task}-{args.agent}.{args.format}'
+        datapath = os.path.join('data', f'{grammar}-{karel_task}-{args.agent}.{args.format}')
         karel_task_config = get_karel_task_config(karel_task)
         
         with open(grammar_file) as dsl_file: 

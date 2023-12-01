@@ -16,7 +16,7 @@ USE_SEQ_STATE_EMBD=true
 if [ $# -eq 0 ]; then
     tasks=("cleanHouse" "harvester" "fourCorners" "randomMaze" "stairClimber" "topOff")
 else
-    tasks="$@"
+    tasks=( "$@" )
 fi
 
 if [ "${LOG}" = true ]; then

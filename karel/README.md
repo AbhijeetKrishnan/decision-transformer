@@ -9,7 +9,7 @@ to create the environment instead of [`conda`](https://docs.conda.io/projects/co
 
 ```bash
 git clone --recurse-submodules https://github.com/AbhijeetKrishnan/decision-transformer
-cd karel
+cd decision-transformer/karel
 conda env create
 conda activate dt-karel
 ```

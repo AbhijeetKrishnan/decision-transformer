@@ -1,0 +1,3 @@
+[submodule "karel/leaps"]
+	path = karel/leaps
+	url = git@github.com:AbhijeetKrishnan/leaps.git

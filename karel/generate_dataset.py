@@ -19,7 +19,9 @@ from leaps.pretrain.get_karel_config import get_karel_task_config
 def run_episode(env, agent, seed=None):
     "Run an episode with an agent policy and yield the timestep"
 
-    obs, info, terminated, truncated = *env.reset(), False, False
+    obs, info = env.reset()
+    terminated = False
+    truncated = False
     while not terminated and not truncated:
         mask = info['action_mask']
         action = agent.get_action(obs, mask)

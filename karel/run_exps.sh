@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DATASET="playback" # "random" or "playback" (leaps)
-SEED=68997 # generated using https://www.random.org/
+DATASET="random" # "random" or "playback" (leaps)
+SEED=75092 # generated using https://www.random.org/
 K=30 # max episode length in Karel LEAPS dataset
 LOG=false
 
@@ -35,7 +35,7 @@ for task in "${tasks[@]}"; do
 
     # Generate dataset
     NUM_EPISODES=2
-    python3 generate_dataset.py -g karel -n "${NUM_EPISODES}" -b 65536 --seed "${SEED}" --agent "${DATASET}" --karel_task "${task}" # --overwrite
+    python3 generate_dataset.py -g karel -n "${NUM_EPISODES}" -b 65536 --seed "${SEED}" --agent "${DATASET}" --karel_task "${task}" --overwrite
 
     # Train model
     python3 experiment.py --dataset "${DATASET}" --env karel --karel_task "${task}" --scale 1.0 --mode delayed --model_type dt --num_eval_episodes 64 \

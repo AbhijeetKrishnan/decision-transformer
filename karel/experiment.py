@@ -1,7 +1,7 @@
 import argparse
 import pickle
-from datetime import datetime
 import sys
+from datetime import datetime
 
 sys.path.insert(0, 'leaps') # hacky path manipulation to allow LEAPS code to be imported
 
@@ -11,6 +11,8 @@ import numpy as np
 import tables as tb
 import torch
 import wandb
+import yaml
+
 from decision_transformer.evaluation.evaluate_episodes import (
     evaluate_episode, evaluate_episode_rtg)
 from decision_transformer.models.decision_transformer import \
@@ -331,12 +333,13 @@ def experiment(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--config', '-c', type=str, help='Path to YAML config file')
     parser.add_argument('--env', type=str, default='karel', help='Environment to use')
-    parser.add_argument('--dataset', type=str, default='playback', help='Dataset to use for training (identified by policy used for generation)') # random
+    parser.add_argument('--dataset', type=str, default='playback', help='Dataset to use for training (identified by policy used for generation)')
     parser.add_argument('--mode', choices=['normal', 'delayed'], default='delayed', help='"normal" for standard setting, "delayed" for moving rewards to end of trajectory')  # 'normal' for standard setting, 'delayed' for sparse
     parser.add_argument('--env_targets', type=str, default='1', help='comma-separated list of target returns')
     parser.add_argument('--scale', type=float, default=1., help='Scale for rewards/returns')
-    parser.add_argument('--K', type=int, default=30, help='Context length') # context length
+    parser.add_argument('--K', type=int, default=30, help='Context length')
     parser.add_argument('--pct_traj', type=float, default=1., help='Use top x% of trajectories (for %BC experiments)')
     parser.add_argument('--batch_size', type=int, default=64, help='Number of transitions to sample from a trajectory in a batch')
     parser.add_argument('--model_type', choices=['bc', 'dt'], default='dt', help='"dt" for decision transformer, "bc" for behavior cloning') # dt for decision transformer, bc for behavior cloning
@@ -361,7 +364,12 @@ if __name__ == '__main__':
     parser.add_argument('--sample', choices=['length', 'reward'], default='reward', help='How to weight a trajectory when sampling from it')
     
     args = parser.parse_args()
-    variant = vars(args)
+    if args.config is not None:
+        with open(args.config, 'r') as params:
+            data = yaml.load(params, Loader=yaml.CLoader)
+            variant = { **data['task'], **data['training'], **data['hyperparams'] }
+    else:
+        variant = vars(args)
 
     env, trajectories = get_trajectories(variant)
     experiment('karel-experiment', env, trajectories, variant)

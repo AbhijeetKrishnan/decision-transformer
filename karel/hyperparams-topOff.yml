@@ -1,0 +1,36 @@
+# Hyperparameters for training a decision transformer on the topOff Karel task
+# found by tuning using Optuna
+%YAML 1.1
+---
+task:
+  env: karel
+  karel_task: topOff
+  dataset: playback
+  seed: 75092
+training:
+  env_targets: "1"
+  scale: 1.0
+  mode: delayed
+  device: cuda
+  model_type: dt
+  log_to_wandb: false
+  format: h5
+hyperparams:
+  K: 30
+  pct_traj: 0.01
+  batch_size: 128
+  embed_dim: 128
+  n_layer: 2
+  n_head: 1
+  activation_function: gelu_new
+  dropout: 0.1
+  learning_rate: 1.0e-4
+  weight_decay: 3.0e-3
+  warmup_steps: 158
+  num_eval_episodes: 10
+  max_iters: 10
+  num_steps_per_iter: 100
+  use_max_log_prob: false
+  use_seq_state_embedding: false
+  sample: length
+...

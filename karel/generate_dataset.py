@@ -97,7 +97,7 @@ def main():
         if not os.path.exists('data'):
             os.makedirs('data')
         datapath = os.path.join('data', f'{grammar}-{karel_task}-{args.agent}.{args.format}')
-        karel_task_config = get_karel_task_config(karel_task)
+        karel_task_config = get_karel_task_config(karel_task, args.seed)
         
         with open(grammar_file) as dsl_file: 
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
@@ -118,7 +118,7 @@ def main():
         num_iterations = args.num_episodes
     elif args.agent == 'playback':
         agent = ParsedPlayback(env)
-        leaps_data = pd.read_csv('leaps_data.csv')
+        leaps_data = pd.read_csv(os.path.join('leaps', 'leaps_data.csv'))
         num_iterations = len(leaps_data['program'])
     
     # Generation statistics

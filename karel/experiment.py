@@ -47,11 +47,11 @@ def get_trajectories(variant):
     if env_name == 'karel':
         karel_task = variant['karel_task']
         dataset_path = f'data/{env_name}-{karel_task}-{dataset}.{file_format}'
-        karel_task_config = get_karel_task_config(karel_task)
+        karel_task_config = get_karel_task_config(karel_task, variant['seed'])
 
         with open('decision_transformer/envs/assets/karel-leaps-dsl.pg') as dsl_file:
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
-                                 reward_fn=karel_reward, max_len=51, 
+                                 reward_fn=karel_reward, max_len=50, 
                                  mdp_config=karel_task_config) # TODO: handle state max seq len better
         # env_targets = env_targets if env_targets is not None else [1]
     else:
@@ -324,8 +324,9 @@ def experiment(
         all_outputs.append(outputs)
         if log_to_wandb:
             wandb.log(outputs)
-    objective = max([output['evaluation/target_1_return_max'] for output in all_outputs]) # max across all iterations
-    # objective = all_outputs[-1]['evaluation/target_1_return_max'] # last iteration TODO: which to choose and why?
+    # TODO: which to choose and why?
+    # objective = max([output['evaluation/target_1_return_max'] for output in all_outputs]) # max across all iterations
+    objective = all_outputs[-1]['evaluation/target_1_return_max'] # last iteration
     return objective
 
 if __name__ == '__main__':

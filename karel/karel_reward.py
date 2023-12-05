@@ -1,13 +1,9 @@
 import sys
+import os
 
-sys.path.insert(0, 'leaps')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'leaps')) # hacky path manipulation to allow LEAPS code to be imported
+from leaps.test_karel import get_reward
 
-from leaps.prl_gym.exec_env import ExecEnv2
 
-
-def karel_reward(program_text, mdp_config=None):
-    program = program_text.replace('\\', '').replace('\'', '')
-    
-    karel_env = ExecEnv2(mdp_config['args'])
-    reward, pred_program = karel_env.reward(program, is_program_str=True)
-    return reward
+def karel_reward(program_text, mdp_config):
+    return get_reward(program_text, mdp_config['seed'], mdp_config['env_task'])

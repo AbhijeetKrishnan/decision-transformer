@@ -6,4 +6,4 @@ from leaps.test_karel import get_reward
 
 
 def karel_reward(program_text, mdp_config):
-    return get_reward(program_text, mdp_config['seed'], mdp_config['env_task'])
+    return get_reward(program_text, mdp_config)

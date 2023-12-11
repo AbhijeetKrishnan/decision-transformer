@@ -7,6 +7,7 @@ task:
   karel_task: topOff
   dataset: playback
   seed: 75092
+  num_eval_episodes: 10
 training:
   env_targets: "1"
   scale: 1.0
@@ -23,14 +24,13 @@ hyperparams:
   n_layer: 2
   n_head: 1
   activation_function: gelu_new
-  dropout: 0.1
-  learning_rate: 1.0e-4
+  dropout: 0.15
+  learning_rate: 1.0e-3
   weight_decay: 3.0e-3
   warmup_steps: 158
-  num_eval_episodes: 10
   max_iters: 10
-  num_steps_per_iter: 100
+  num_steps_per_iter: 7000
   use_max_log_prob: false
-  use_seq_state_embedding: false
+  use_seq_state_embedding: true
   sample: length
 ...

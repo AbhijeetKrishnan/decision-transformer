@@ -7,7 +7,7 @@ task:
   karel_task: topOff
   dataset: playback
   seed: 75092
-  num_eval_episodes: 10
+  num_eval_episodes: 64
 training:
   env_targets: "1"
   scale: 1.0

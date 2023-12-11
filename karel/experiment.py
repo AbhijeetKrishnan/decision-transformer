@@ -326,8 +326,6 @@ def experiment(
         all_outputs.append(outputs)
         if log_to_wandb:
             wandb.log(outputs)
-    # TODO: which to choose and why?
-    # objective = max([output['evaluation/target_1_return_max'] for output in all_outputs]) # max across all iterations
     objective = all_outputs[-1]['evaluation/target_1_return_max'] # last iteration
     return objective
 

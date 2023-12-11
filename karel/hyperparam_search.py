@@ -9,7 +9,9 @@ from experiment import experiment, get_trajectories
 
 def objective_factory(task):
     def objective(trial):
-        n_head = 1 # trial.suggest_int('n_head', 1, 3, step=1)
+        n_head = trial.suggest_int('n_head', 1, 3)
+        n_layer_factor = trial.suggest_int('n_layer_factor', 1, 3)
+
         variant = {
             'env': 'karel',
             'dataset': 'playback',
@@ -18,24 +20,25 @@ def objective_factory(task):
             'scale': 1.0,
             'K': trial.suggest_int('K', 10, 50, step=20),
             'pct_traj': trial.suggest_categorical('pct_traj', [0.01, 0.1, 0.5, 1.0]),
-            'batch_size': trial.suggest_int('batch_size', 32, 128, step=32),
+            'batch_size': trial.suggest_categorical('batch_size', [32, 64, 128, 256]),
             'model_type': 'dt',
-            'embed_dim': trial.suggest_int('embed_dim', 32, 128, step=32),
-            'n_layer': trial.suggest_int('n_layer', n_head, n_head * 3, step=n_head), # must satisfy n_layer % n_head == 0
+            'embed_dim': trial.suggest_categorical('embed_dim', [32, 64, 128, 256]),
             'n_head': n_head,
+            'n_layer_factor': n_layer_factor,
+            'n_layer': n_head * n_layer_factor,
             'activation_function': trial.suggest_categorical('activation_function', ['relu', 'silu', 'gelu', 'tanh', 'gelu_new']),
             'dropout': trial.suggest_float('dropout', 0.0, 0.2),
             'learning_rate': trial.suggest_float('learning_rate', 1e-4, 1e-2, log=True),
             'weight_decay': trial.suggest_float('weight_decay', 1e-4, 1e-2, log=True),
             'warmup_steps': trial.suggest_int('warmup_steps', 1e2, 1e4, log=True),
-            'num_eval_episodes': 10,
+            'num_eval_episodes': 64, # arbitrary
             'max_iters': trial.suggest_int('max_iters', 1, 10),
             'num_steps_per_iter': trial.suggest_int('num_steps_per_iter', 1e2, 1e4, log=True),
             'device': 'cuda',
             'log_to_wandb': False,
             'use_seq_state_embedding': trial.suggest_categorical('use_seq_state_embedding', [True, False]),
             'karel_task': task,
-            'seed': 75092,
+            'seed': 75092, # data generation seed
             'sample': trial.suggest_categorical('sample', ['length', 'reward']),
         }
         env, trajectories = get_trajectories(variant)

@@ -9,8 +9,6 @@ from experiment import experiment, get_trajectories
 
 def objective_factory(task):
     def objective(trial):
-        n_head = trial.suggest_int('n_head', 1, 3)
-        n_layer_factor = trial.suggest_int('n_layer_factor', 1, 3)
 
         variant = {
             'env': 'karel',
@@ -23,9 +21,8 @@ def objective_factory(task):
             'batch_size': trial.suggest_categorical('batch_size', [32, 64, 128, 256]),
             'model_type': 'dt',
             'embed_dim': trial.suggest_categorical('embed_dim', [32, 64, 128, 256]),
-            'n_head': n_head,
-            'n_layer_factor': n_layer_factor,
-            'n_layer': n_head * n_layer_factor,
+            'n_head': trial.suggest_categorical('n_head', [1, 2, 4]), # embed_dim % n_head == 0
+            'n_layer': trial.suggest_int('n_layer', 1, 4),
             'activation_function': trial.suggest_categorical('activation_function', ['relu', 'silu', 'gelu', 'tanh', 'gelu_new']),
             'dropout': trial.suggest_float('dropout', 0.0, 0.2),
             'learning_rate': trial.suggest_float('learning_rate', 1e-4, 1e-2, log=True),

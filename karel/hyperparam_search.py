@@ -46,9 +46,9 @@ def objective_factory(task):
 def main():
     task = sys.argv[1]
     optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-    study_name = f'karel-optuna-{task}'
-    storage_name = f'sqlite:///{study_name}.sqlite3'
-    if os.path.exists(f'{study_name}.sqlite3'):
+    study_name = f'{task}'
+    storage_name = f'sqlite:///karel-optuna.sqlite3'
+    if os.path.exists(f'karel-optuna.sqlite3'):
         study = optuna.load_study(study_name=study_name, storage=storage_name)
     else:
         study = optuna.create_study(direction='maximize', study_name=study_name, storage=storage_name, load_if_exists=True)

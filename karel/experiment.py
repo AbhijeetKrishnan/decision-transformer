@@ -204,11 +204,11 @@ def experiment(
 
     def eval_episodes(target_rew):
         def fn(model):
-            returns, lengths = [], []
+            returns, lengths, programs = [], [], []
             for _ in range(num_eval_episodes):
                 with torch.no_grad():
                     if model_type == 'dt':
-                        ret, length = evaluate_episode_rtg(
+                        ret, length, prog = evaluate_episode_rtg(
                             env,
                             state_dim,
                             act_dim,
@@ -236,8 +236,10 @@ def experiment(
                         )
                 returns.append(ret)
                 lengths.append(length)
+                programs.append(prog)
             return {
                 f'target_{target_rew}_return_max': np.max(returns),
+                f'target_{target_rew}_best_prog': programs[np.argmax(returns)],
                 f'target_{target_rew}_return_mean': np.mean(returns),
                 f'target_{target_rew}_return_std': np.std(returns),
                 f'target_{target_rew}_length_mean': np.mean(lengths),

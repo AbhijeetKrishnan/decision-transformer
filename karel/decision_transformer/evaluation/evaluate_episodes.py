@@ -1,6 +1,9 @@
 import numpy as np
 import torch
 
+from contextlib import redirect_stdout
+from io import StringIO
+
 
 def show_grads(model, tol=1e-2):
     # Ref.: https://blog.briankitano.com/llama-from-scratch/
@@ -116,7 +119,7 @@ def evaluate_episode_rtg(
 
     sim_states = []
 
-    episode_return, episode_length = 0, 0
+    episode_return, episode_length, prog = 0, 0, None
     for t in range(max_ep_len):
 
         # add padding
@@ -140,6 +143,7 @@ def evaluate_episode_rtg(
         state, reward, done, truncated, info = env.step(action)
 
         if done or truncated:
+            prog = env.unwrapped._repr_state()
             env.render()
             print(reward)
 
@@ -165,4 +169,4 @@ def evaluate_episode_rtg(
         if done or truncated:
             break
 
-    return episode_return, episode_length
+    return episode_return, episode_length, prog

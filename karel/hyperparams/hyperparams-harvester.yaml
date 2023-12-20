@@ -23,13 +23,13 @@ hyperparams:
   embed_dim: 128
   n_layer: 2
   n_head: 2
-  activation_function: relu
-  dropout: 0.007
-  learning_rate: 3.2e-4
-  weight_decay: 1.0e-3
-  warmup_steps: 150
+  activation_function: tanh
+  dropout: 7.1e-3
+  learning_rate: 5.2e-4
+  weight_decay: 1.2e-3
+  warmup_steps: 200
   max_iters: 10
-  num_steps_per_iter: 1500
+  num_steps_per_iter: 700
   use_seq_state_embedding: true
   sample: length
 ...

@@ -21,15 +21,15 @@ hyperparams:
   pct_traj: 0.01
   batch_size: 64
   embed_dim: 128
-  n_layer: 2
-  n_head: 1
+  n_layer: 4
+  n_head: 4
   activation_function: relu
-  dropout: 0.05
-  learning_rate: 1.0e-3
-  weight_decay: 1.0e-3
-  warmup_steps: 1000
+  dropout: 4.5e-2
+  learning_rate: 1.1e-4
+  weight_decay: 2.6e-3
+  warmup_steps: 5000
   max_iters: 10
-  num_steps_per_iter: 1000
+  num_steps_per_iter: 9000
   use_seq_state_embedding: true
   sample: length
 ...

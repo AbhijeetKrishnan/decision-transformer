@@ -59,7 +59,7 @@ def get_trajectories(variant):
                 "GrammarSynthesisEnv-v0",
                 grammar=dsl_file.read(),
                 reward_fn=karel_reward,
-                max_len=50,
+                max_len=45,
                 mdp_config=karel_task_config,
             )  # TODO: handle state max seq len better
         # env_targets = env_targets if env_targets is not None else [1]

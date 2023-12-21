@@ -17,7 +17,7 @@ training:
   log_to_wandb: false
   format: h5
 hyperparams:
-  K: 50
+  K: 45
   pct_traj: 0.01
   batch_size: 64
   embed_dim: 128

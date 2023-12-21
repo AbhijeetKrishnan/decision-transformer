@@ -103,7 +103,7 @@ def main():
         
         with open(grammar_file) as dsl_file: 
             env = gymnasium.make('GrammarSynthesisEnv-v0', grammar=dsl_file.read(),
-                                 reward_fn=karel_reward, max_len=50, 
+                                 reward_fn=karel_reward, max_len=45, 
                                  mdp_config=karel_task_config)
 
     # Delete file if already present

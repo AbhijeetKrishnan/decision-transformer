@@ -59,7 +59,7 @@ def get_trajectories(variant):
                 "GrammarSynthesisEnv-v0",
                 grammar=dsl_file.read(),
                 reward_fn=karel_reward,
-                max_len=45,
+                max_len=50,
                 mdp_config=karel_task_config,
             )  # TODO: handle state max seq len better
         # env_targets = env_targets if env_targets is not None else [1]
@@ -546,17 +546,17 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    variant = vars(args)
     if args.config is not None:
         with open(args.config, "r") as params:
             data = yaml.load(params, Loader=yaml.CLoader)
-            variant = {**data["task"], **data["training"], **data["hyperparams"]}
+        yaml_config = {**data["task"], **data["training"], **data["hyperparams"]}
 
-            # if parameter exists in cmdline args, override config file
-            for key, value in vars(args):
-                if key in variant:
-                    variant[key] = value
-    else:
-        variant = vars(args)
-
+        # # if parameter exists in cmdline args, override config file
+        # for key, value in variant.items():
+        #     if key in yaml_config:
+        #         yaml_config[key] = value
+        variant = yaml_config
+    print(variant)
     env, trajectories = get_trajectories(variant)
     experiment("karel-experiment", env, trajectories, variant)

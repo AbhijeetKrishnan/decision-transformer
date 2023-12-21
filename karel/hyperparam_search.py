@@ -16,7 +16,7 @@ def objective_factory(task):
             'mode': 'delayed',
             'env_targets': '1',
             'scale': 1.0,
-            'K': trial.suggest_int('K', 5, 45, step=20),
+            'K': trial.suggest_int('K', 10, 30, step=20),
             'pct_traj': trial.suggest_categorical('pct_traj', [0.01, 0.1, 0.5, 1.0]),
             'batch_size': trial.suggest_categorical('batch_size', [32, 64, 128, 256]),
             'model_type': 'dt',

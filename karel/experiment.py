@@ -92,8 +92,13 @@ def experiment(
     group_name = f'{exp_prefix}-{env_name}-{variant["karel_task"]}-{dataset}'
     exp_prefix = f'{group_name}-{datetime.now().strftime("%Y%m%d_%H%M%S.%f")}'
     env_targets = variant.get("env_targets", None)
-    if env_targets is not None:
+    if env_targets is not None and isinstance(env_targets, str):
         env_targets = list(map(int, env_targets.split(",")))
+    eval_seeds = variant.get("eval_seeds", None)
+    if eval_seeds is None:
+        eval_seeds = [variant["seed"]]
+    elif isinstance(eval_seeds, str):
+        eval_seeds = list(map(int, eval_seeds.split(",")))
     scale = variant.get("scale", 1000.0)
 
     if model_type == "bc":
@@ -544,6 +549,7 @@ if __name__ == "__main__":
         default="reward",
         help="How to weight a trajectory when sampling from it",
     )
+    parser.add_argument("--eval_seeds", type=str, default=None, help="Seeds on which to run the evaluation step")
 
     args = parser.parse_args()
     variant = vars(args)

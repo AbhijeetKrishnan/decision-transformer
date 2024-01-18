@@ -119,8 +119,10 @@ def main():
         num_iterations = args.num_episodes
     elif args.agent == 'playback':
         agent = ParsedPlayback(env)
-        leaps_data = pd.read_csv(os.path.join('leaps', 'leaps_data.csv'))
+        num_iterations = None
+        leaps_data = pd.read_csv(os.path.join('leaps', 'leaps_data.csv'), nrows=num_iterations)
         num_iterations = len(leaps_data['program'])
+        
     
     # Generation statistics
     returns = []

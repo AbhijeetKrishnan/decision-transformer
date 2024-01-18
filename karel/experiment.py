@@ -359,9 +359,7 @@ def experiment(
             batch_size=batch_size,
             get_batch=get_batch,
             scheduler=scheduler,
-            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.KLDivLoss(
-                reduction="batchmean"
-            )(a_hat, a),
+            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.CrossEntropyLoss()(a_hat, a),
             eval_fns=[eval_episodes(tar) for tar in env_targets],
         )
     elif model_type == "bc":
@@ -371,9 +369,7 @@ def experiment(
             batch_size=batch_size,
             get_batch=get_batch,
             scheduler=scheduler,
-            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.KLDivLoss(
-                reduction="batchmean"
-            )(a_hat, a),
+            loss_fn=lambda s_hat, a_hat, r_hat, s, a, r: torch.nn.CrossEntropyLoss()(a_hat, a),
             eval_fns=[eval_episodes(tar) for tar in env_targets],
         )
 

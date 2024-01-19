@@ -1,0 +1,37 @@
+# Hyperparameters for training a decision transformer on the randomMaze Karel task
+# found by tuning using Optuna, but manually edited to be somewhere near the
+# mean for all tasks
+%YAML 1.1
+---
+task:
+  env: karel
+  karel_task: randomMaze
+  dataset: playback
+  seed: 75092
+  num_eval_episodes: 64
+  eval_seeds: [70965,  85006, 50916, 57114, 91771]
+training:
+  env_targets: [1]
+  scale: 1.0
+  mode: delayed
+  device: cuda
+  model_type: dt
+  log_to_wandb: true
+  format: h5
+hyperparams:
+  K: 50
+  pct_traj: 0.01
+  batch_size: 64
+  embed_dim: 128
+  n_layer: 2
+  n_head: 2
+  activation_function: relu
+  dropout: 0.1
+  learning_rate: 2.0e-3
+  weight_decay: 1.0e-3
+  warmup_steps: 200
+  max_iters: 10
+  num_steps_per_iter: 1000
+  use_seq_state_embedding: true
+  sample: length
+...

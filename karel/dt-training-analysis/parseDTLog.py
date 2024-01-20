@@ -13,12 +13,10 @@ def extract_data_from_log(log_file_path):
                 program = line.strip()
                 reward = float(lines[i + 1].strip())
                 data.append((itr, program, reward))
-                i += 2
-            elif line.startswith("="):
-                i += (
-                    14  # skip the next 14 lines to avoid reading the evaluation metrics
-                )
+                i += 1
+            elif line.startswith("Iteration"):
                 itr += 1
+            i += 1
     return data
 
 
@@ -36,9 +34,12 @@ def main():
         log_file_path = f"dt-{task}.log"  # Replace with your log file path
         csv_file_path = f"dt-{task}.csv"  # Output CSV file path
 
-        data = extract_data_from_log(log_file_path)
-        write_to_csv(data, csv_file_path)
-        print(f"Data written to {csv_file_path}")
+        try:
+            data = extract_data_from_log(log_file_path)
+            write_to_csv(data, csv_file_path)
+            print(f"Data written to {csv_file_path}")
+        except FileNotFoundError:
+            print(f"Could't find file: {log_file_path}")
 
 
 if __name__ == "__main__":

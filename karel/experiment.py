@@ -390,7 +390,7 @@ def experiment(
         all_outputs.append(outputs)
         if log_to_wandb:
             wandb.log(outputs)
-    objective = all_outputs[-1]["evaluation/target_1_return_max"]  # last iteration
+    objective = all_outputs[-1]["evaluation/target_2.2_return_max"]  # last iteration TODO: remove this hardcoding
     return objective
 
 

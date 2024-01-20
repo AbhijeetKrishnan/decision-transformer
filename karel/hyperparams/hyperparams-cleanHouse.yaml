@@ -1,5 +1,5 @@
 # Hyperparameters for training a decision transformer on the cleanHouse Karel task
-# found by tuning using Optuna TODO:
+# found by tuning using Optuna
 %YAML 1.1
 ---
 task:
@@ -10,7 +10,7 @@ task:
   num_eval_episodes: 64
   eval_seeds: [70965,  85006, 50916, 57114, 91771]
 training:
-  env_targets: [1]
+  env_targets: [2.2]
   scale: 1.0
   mode: delayed
   device: cuda

@@ -143,14 +143,17 @@ class SequentialStateEmbedder(nn.Module):
         self.embedding = nn.Embedding(
             vocabulary_size, vocabulary_size, padding_idx=padding_idx
         )
-        self.rnn = nn.GRU(state_dim * vocabulary_size, hidden_dim, batch_first=True)
+        self.rnn = nn.GRU(vocabulary_size, hidden_dim, batch_first=True)
         self.fc = nn.Linear(hidden_dim, hidden_dim)
 
     def forward(self, x):
+        batch_size, seq_length = x.shape[0], x.shape[1]
         embedded = self.embedding(x)
-        embedded = embedded.view(embedded.shape[0], embedded.shape[1], -1)
-        rnn_output, _ = self.rnn(embedded)
-        final_output = self.fc(rnn_output[-1])
+        batch_merged = embedded.reshape(-1, *embedded.shape[2:])
+        rnn_output, _ = self.rnn(batch_merged)
+        last_state = rnn_output[:, -1, :]
+        rebatched = last_state.reshape(batch_size, seq_length, -1)
+        final_output = self.fc(rebatched)
         return final_output
 
 

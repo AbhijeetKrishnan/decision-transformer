@@ -111,6 +111,9 @@ def experiment(
     vocab_size = env.observation_space.nvec[0]
     use_max_log_prob = variant.get("use_max_log_prob", False)
     use_seq_state_embedding = variant.get("use_seq_state_embedding", False)
+    gru_hidden_size = variant.get("gru_hidden_size", None)
+    gru_num_layers = variant.get("gru_num_layers", 1)
+    gru_dropout = variant.get("gru_dropout", 0.0)
 
     # save all path information into separate lists
     mode = variant.get("mode", "normal")
@@ -316,6 +319,9 @@ def experiment(
             max_ep_len=max_ep_len,
             hidden_size=variant["embed_dim"],
             vocab_size=vocab_size,
+            gru_hidden_size=gru_hidden_size,
+            gru_num_layers=gru_num_layers,
+            gru_dropout=gru_dropout,
             action_tanh=False,
             use_seq_state_embedding=use_seq_state_embedding,
             use_max_log_prob=use_max_log_prob,
@@ -546,6 +552,9 @@ if __name__ == "__main__":
         help="How to weight a trajectory when sampling from it",
     )
     parser.add_argument("--eval_seeds", type=str, default=None, help="Seeds on which to run the evaluation step")
+    parser.add_argument("--gru_hidden_size", type=int, default=57, help="Hidden size of GRU in sequential state embedder")
+    parser.add_argument("--gru_num_layers", type=int, default=1, help="Number of layers in GRU in sequential state embedder")
+    parser.add_argument("--gru_dropout", type=float, default=0.0, help="Dropout in GRU in sequential state layer")
 
     args = parser.parse_args()
     variant = vars(args)

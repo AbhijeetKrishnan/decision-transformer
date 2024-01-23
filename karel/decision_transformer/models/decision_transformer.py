@@ -138,18 +138,22 @@ def func(x, pos):
 
 
 class SequentialStateEmbedder(nn.Module):
-    def __init__(self, state_dim, vocabulary_size, hidden_dim, padding_idx=0):
+    def __init__(
+        self, 
+        vocabulary_size, 
+        hidden_dim,
+        gru_hidden_size,
+        gru_num_layers=1,
+        gru_dropout=0.0,
+    ):
         super().__init__()
-        self.embedding = nn.Embedding(
-            vocabulary_size, vocabulary_size, padding_idx=padding_idx
-        )
-        self.rnn = nn.GRU(vocabulary_size, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, hidden_dim)
+        self.rnn = nn.GRU(vocabulary_size, gru_hidden_size, batch_first=True, num_layers=gru_num_layers, dropout=gru_dropout)
+        self.fc = nn.Linear(gru_hidden_size, hidden_dim)
 
     def forward(self, x):
         batch_size, seq_length = x.shape[0], x.shape[1]
-        embedded = self.embedding(x)
-        batch_merged = embedded.reshape(-1, *embedded.shape[2:])
+        one_hot = torch.nn.functional.one_hot(x, self.rnn.input_size).to(torch.float32)
+        batch_merged = one_hot.reshape(-1, *one_hot.shape[2:])
         rnn_output, _ = self.rnn(batch_merged)
         last_state = rnn_output[:, -1, :]
         rebatched = last_state.reshape(batch_size, seq_length, -1)
@@ -169,6 +173,9 @@ class DecisionTransformer(TrajectoryModel):
         act_dim,
         hidden_size,
         vocab_size,
+        gru_hidden_size,
+        gru_num_layers=1,
+        gru_dropout=0.0,
         max_length=None,
         max_ep_len=4096,
         action_tanh=True,
@@ -195,7 +202,7 @@ class DecisionTransformer(TrajectoryModel):
         self.embed_return = nn.Linear(1, hidden_size)
         if use_seq_state_embedding:
             self.embed_state = SequentialStateEmbedder(
-                state_dim, vocab_size, hidden_size
+                vocab_size, hidden_size, gru_hidden_size, gru_num_layers, gru_dropout
             )
         else:
             self.embed_state = nn.Linear(self.state_dim, hidden_size)

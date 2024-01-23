@@ -14,7 +14,7 @@ def objective_factory(task):
             'env': 'karel',
             'dataset': 'playback',
             'mode': 'delayed',
-            'env_targets': '2.2',
+            'env_targets': [2.2],
             'scale': 1.0,
             'K': 50,
             'pct_traj': trial.suggest_categorical('pct_traj', [0.01, 0.1, 0.5, 1.0]),

@@ -180,7 +180,7 @@ def experiment(
         s, a, r, d, rtg, action_masks, timesteps, mask = [], [], [], [], [], [], [], []
         for i in range(batch_size):
             traj = trajectories[int(sorted_inds[batch_inds[i]])]
-            si = 0  # rng.integers(0, traj['rewards'].shape[0] - 1) TODO: analyze if and why this is necessary
+            si = rng.integers(0, traj['rewards'].shape[0] - 1)
 
             # get sequences from dataset
             s.append(traj["observations"][si : si + max_len].reshape(1, -1, state_dim))

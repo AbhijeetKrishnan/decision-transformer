@@ -407,7 +407,7 @@ class DecisionTransformer(TrajectoryModel):
         else:
             attention_mask = None
 
-        _, action_preds, return_preds = self.forward(
+        _, action_preds, _ = self.forward(
             states,
             actions,
             None,

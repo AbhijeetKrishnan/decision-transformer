@@ -34,7 +34,7 @@ def objective_factory(task):
             'log_to_wandb': False,
             'use_seq_state_embedding': trial.suggest_categorical('use_seq_state_embedding', [True, False]),
             'gru_hidden_size': trial.suggest_categorical('gru_hidden_size', [16, 128, 512, 1024]),
-            'gru_num_layers': trial.suggest_categorical('gru_num_layers', [1, 2, 3]),
+            'gru_num_layers': 1, # trial.suggest_categorical('gru_num_layers', [1, 2, 3]),
             'gru_dropout': trial.suggest_float('gru_dropout', 0.0, 0.1),
             'karel_task': task,
             'seed': 75092, # data generation seed

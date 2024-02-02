@@ -5,7 +5,7 @@
 ---
 task:
   env: karel
-  karel_task: randomMaze
+  karel_task: topOff
   dataset: playback
   seed: 75092
   num_eval_episodes: 64
@@ -23,15 +23,17 @@ hyperparams:
   pct_traj: 0.01
   batch_size: 64
   embed_dim: 128
-  n_layer: 2
+  n_layer: 3
   n_head: 2
-  activation_function: relu
-  dropout: 0.1
-  learning_rate: 2.0e-3
-  weight_decay: 1.0e-3
+  dropout: 0.05
+  learning_rate: 1.0e-3
+  weight_decay: 5.0e-4
   warmup_steps: 200
   max_iters: 10
-  num_steps_per_iter: 1000
+  num_steps_per_iter: 500
   use_seq_state_embedding: true
-  sample: length
+  gru_hidden_size: 512
+  gru_num_layers: 1
+  gru_dropout: 0.05
+  sample: reward
 ...

@@ -5,7 +5,7 @@
 ---
 task:
   env: karel
-  karel_task: topOff
+  karel_task: randomMaze
   dataset: playback
   seed: 75092
   num_eval_episodes: 64
@@ -20,6 +20,7 @@ training:
   format: h5
 hyperparams:
   K: 50
+  activation_function: relu
   pct_traj: 0.01
   batch_size: 64
   embed_dim: 128

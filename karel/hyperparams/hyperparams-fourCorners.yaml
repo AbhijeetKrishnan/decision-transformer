@@ -32,5 +32,8 @@ hyperparams:
   max_iters: 10
   num_steps_per_iter: 1000
   use_seq_state_embedding: true
+  gru_hidden_size: 512
+  gru_num_layers: 1
+  gru_dropout: 0.05
   sample: length
 ...

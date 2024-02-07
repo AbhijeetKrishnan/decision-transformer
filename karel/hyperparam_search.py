@@ -31,7 +31,7 @@ def objective_factory(task):
             'max_iters': 10,
             'num_steps_per_iter': trial.suggest_int('num_steps_per_iter', 1e2, 1e4, log=True),
             'device': 'cuda',
-            'log_to_wandb': False,
+            'log_to_wandb': False, # no need to log so many trials to W&B!
             'use_seq_state_embedding': trial.suggest_categorical('use_seq_state_embedding', [True, False]),
             'gru_hidden_size': trial.suggest_categorical('gru_hidden_size', [16, 128, 512, 1024]),
             'gru_num_layers': 1, # trial.suggest_categorical('gru_num_layers', [1, 2, 3]),

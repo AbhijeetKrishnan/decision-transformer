@@ -1,4 +1,5 @@
 import csv
+import sys
 
 
 def extract_data_from_log(log_file_path):
@@ -28,7 +29,7 @@ def write_to_csv(data, csv_file_path):
             csv_writer.writerow(row)
 
 
-def main():
+def all_tasks():
     tasks = ('cleanHouse', 'fourCorners', 'harvester', 'randomMaze', 'stairClimber', 'topOff')
     for task in tasks:
         log_file_path = f"dt-{task}.log"  # Replace with your log file path
@@ -40,6 +41,17 @@ def main():
             print(f"Data written to {csv_file_path}")
         except FileNotFoundError:
             print(f"Could't find file: {log_file_path}")
+
+
+def main():
+    log_file_path = sys.argv[1]
+    csv_file_path = sys.argv[2]
+    try:
+        data = extract_data_from_log(log_file_path)
+        write_to_csv(data, csv_file_path)
+        print(f'Data written to {csv_file_path}')
+    except FileNotFoundError:
+        print(f"Couldn't find file: {log_file_path}")
 
 
 if __name__ == "__main__":
